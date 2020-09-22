@@ -36,8 +36,12 @@ private:
 
 	DaoHang daohang;
 
+	QHBoxLayout hBoxLayout;
+	QPushButton uploadBtn;
+
 //private slots:
 	void ClickItem(QListWidgetItem* item);
+	void AddFile(QIcon _icon, QString _name);
 
 public:
 	MainWindow();

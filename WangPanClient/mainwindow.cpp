@@ -50,12 +50,13 @@ void DaoHang::AddMenu(QString _text)
 MainWindow::MainWindow():
 	gridLayout(this),
 	listWidget(this),
-	daohang(this)
+	daohang(this),
+	hBoxLayout(),
+	uploadBtn(tr("上传"), this)
 {
 	this->setWindowTitle(tr("网盘"));
 
 	const QSize IMAGE_SIZE(64, 64);
-	const QSize ITEM_SIZE(100, 100);
 
 	this->listWidget.setIconSize(IMAGE_SIZE);
 	this->listWidget.setResizeMode(QListView::Adjust);
@@ -64,22 +65,23 @@ MainWindow::MainWindow():
 	this->listWidget.setSpacing(8);
 	this->listWidget.setSelectionMode(QAbstractItemView::ContiguousSelection);
 
+	this->hBoxLayout.addWidget(&this->uploadBtn);
+	this->hBoxLayout.addStretch();
+
 	for(int i = 0; i <= 10; i++)
 	{
-		std::string temp("文本"); 
-		temp += std::to_string(i);
+		std::string temp("文本");
 
-		this->listWidget.insertItem(i, tr(temp.c_str()));
-		QListWidgetItem* const listWidgetItem = this->listWidget.item(this->listWidget.count() - 1);
-	       	listWidgetItem->setIcon(QIcon("/home/administrator/Downloads/chat.ico"));	
-        	listWidgetItem->setSizeHint(ITEM_SIZE);	
+		temp += std::to_string(i);
+		this->AddFile(QIcon("/home/administrator/Downloads/chat.ico"), temp.c_str());
 	}
 
 	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
 	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
 
-	this->gridLayout.addWidget(&this->daohang, 0, 0);
-	this->gridLayout.addWidget(&this->listWidget, 0, 1);
+	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
+	this->gridLayout.addWidget(&this->daohang, 1, 0);
+	this->gridLayout.addWidget(&this->listWidget, 1, 1);
 	//this->setLayout(&this->gridLayout);
 }
 
@@ -91,6 +93,17 @@ MainWindow::~MainWindow()
 void MainWindow::ClickItem(QListWidgetItem* item)
 {
 	std::cout << "clickitem" << item << std::endl;
+}
+
+void MainWindow::AddFile(QIcon _icon, QString _filename)
+{
+	const QSize ITEM_SIZE(100, 100);
+
+	//this->listWidget.insertItem(0, _filename);
+	this->listWidget.addItem(_filename);
+	QListWidgetItem* const listWidgetItem = this->listWidget.item(this->listWidget.count() - 1);
+	listWidgetItem->setIcon(_icon);	
+        listWidgetItem->setSizeHint(ITEM_SIZE);	
 }
 
 void MainWindow::Logout()
