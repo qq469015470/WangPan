@@ -2,3 +2,5 @@
 use UnitTestDB; 
 db.dropDatabase();
 EOF
+
+rm UserFile/* -r

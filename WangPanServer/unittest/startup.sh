@@ -4,3 +4,7 @@ db.UserInfo.insert({name: 'testA', password: '123123', token: new ObjectId()});
 db.UserInfo.insert({name: 'testB', password: '456456', token: new ObjectId('5349b4ddd2781d08c09890f3')});
 db.createCollection('Chat5f29092ac5a7f99f37afc548');
 EOF
+
+mkdir -p UserFile/qq469015470
+touch UserFile/qq469015470/test.txt
+touch UserFile/qq469015470/uploading.txt.upload
