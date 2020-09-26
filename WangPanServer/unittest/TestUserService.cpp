@@ -1,6 +1,6 @@
 #include "../UserService.h"
 
-TEST(UserService, Register)
+TEST(UserServiceTest, Register)
 {
 	UserService userService;
 
@@ -11,7 +11,7 @@ TEST(UserService, Register)
 	EXPECT_TRUE(result.has_value());
 }
 
-TEST(UserService, InvaildRegister)
+TEST(UserServiceTest, InvaildRegister)
 {
 	UserService userService;
 
@@ -21,14 +21,14 @@ TEST(UserService, InvaildRegister)
 	EXPECT_THROW(userService.Register("123123", ""), std::logic_error);
 }
 
-TEST(UserService, SameUserName)
+TEST(UserServiceTest, SameUserName)
 {
 	UserService userService;
 
 	EXPECT_THROW(userService.Register("testA", "55555"), std::logic_error);
 }
 
-TEST(UserService, Login)
+TEST(UserServiceTest, Login)
 {
 	UserService userService;
 

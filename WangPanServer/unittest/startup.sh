@@ -6,5 +6,6 @@ db.createCollection('Chat5f29092ac5a7f99f37afc548');
 EOF
 
 mkdir -p UserFile/qq469015470
+mkdir -p UserFile/testB
 touch UserFile/qq469015470/test.txt
 touch UserFile/qq469015470/uploading.txt.upload

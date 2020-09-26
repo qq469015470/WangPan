@@ -1,0 +1,101 @@
+#include "FileService.h"
+
+#include <array>
+
+FileService::FileService()
+{
+
+}
+
+void FileService::ParpareFile(const char* _filename, const char* _storePath, size_t _size)
+{
+	std::string writePath(storeBasePath);
+	writePath += _storePath;
+	writePath += _filename;
+
+	//检查文件是否存在
+	std::ifstream check(writePath, std::ios::in);
+	if(check.is_open() || this->HadParpareFile((std::string(_storePath) + _filename).c_str()))
+	{
+		throw std::logic_error("file exists");
+	}
+	check.close();
+
+
+	//创建并写入基本信息
+	writePath += '.';
+	writePath += this->fileSuffix;
+
+	std::ofstream file(writePath, std::ios::out| std::ios::binary);
+	if(!file.is_open())
+	{
+		throw std::runtime_error("can not open file");
+	}
+
+	while(_size > 0)
+	{
+		std::array<char, 1024> temp;
+		if(_size >= 1024)
+		{
+			file.write(temp.data(), temp.size());
+			_size -= 1024;
+		}
+		else
+		{
+			file.write(temp.data(), _size);
+			_size -= _size;
+		}
+
+	}
+	
+	file.close();	
+}
+
+bool FileService::HadParpareFile(const char* _path)
+{
+	std::string path(this->storeBasePath);
+	path += _path;
+	path += '.';
+	path += this->fileSuffix;
+	std::ifstream check(path, std::ios::in);
+
+	return check.is_open();
+}
+
+void FileService::AcceptFile(const char* _path, size_t _offset, const char* _bytes, size_t _len)
+{
+	std::string path(this->storeBasePath);
+	path += _path;
+
+	std::string fileName(path.substr(path.find_last_of('/') + 1));
+	std::string uploadName(fileName + '.' + this->fileSuffix);
+
+	//去掉文件名
+	path = path.substr(0, path.find_last_of('/')) + '/';
+
+	std::fstream file((path + uploadName).c_str(), std::ios::in | std::ios::out| std::ios::binary);
+
+	if(file.is_open())
+	{
+    		file.seekg(0, std::ios::end);
+    		size_t fileLen = file.tellg();
+
+		file.seekp(_offset, std::ios::beg);
+		file.write(_bytes, _len);
+
+		if(fileLen == _offset + _len)
+		{
+			std::string cmd("mv ");
+			cmd += path + uploadName;
+			cmd += " ";
+			cmd += path + fileName;
+			system(cmd.c_str());
+		}
+		file.close();
+	}
+	else
+	{
+		throw std::runtime_error("file not exists");
+	}
+
+}

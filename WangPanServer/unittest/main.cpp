@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "TestUserService.cpp"
 #include "TestFileService.cpp"
+#include "TestServer.cpp"
 
 int main(int _argc, char** _args)
 {

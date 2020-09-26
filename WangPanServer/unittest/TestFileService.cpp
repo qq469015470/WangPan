@@ -3,7 +3,7 @@
 
 #include "../FileService.h"
 
-TEST(FileService, ParpareExistsFile)
+TEST(FileServiceTest, ParpareExistsFile)
 {
 	FileService fileService;
 
@@ -17,15 +17,47 @@ TEST(FileService, ParpareExistsFile)
 	check.close();
 }
 
-TEST(FileService, ParpareFile)
+TEST(FileServiceTest, ParpareFile)
 {
 	FileService fileService;
 
-	EXPECT_NO_THROW(fileService.ParpareFile("aaa.txt", "qq469015470/", 123456));
+	EXPECT_NO_THROW(fileService.ParpareFile("aaa.txt", "qq469015470/", 3));
 
 	std::ifstream check;
 
 	check.open("UserFile/qq469015470/aaa.txt.upload", std::ios::in);
-	EXPECT_TRUE(check.is_open());
+	ASSERT_TRUE(check.is_open());
+	
+    	check.seekg(0, std::ios::end);
+    	size_t fileLen = check.tellg();
+	check.seekg(0, std::ios::beg);
+
+	EXPECT_EQ(fileLen, 3);
+
+	check.close();
+}
+
+TEST(FileServiceTest, AcceptFile)
+{
+	FileService fileService;
+
+	std::string temp("abc");
+
+	EXPECT_NO_THROW(fileService.AcceptFile("qq469015470/aaa.txt", 0, temp.data(), 3));
+
+	std::ifstream check("UserFile/qq469015470/aaa.txt", std::ios::in| std::ios::binary);
+
+	ASSERT_TRUE(check.is_open());
+	 //获取文件大小
+    	check.seekg(0, std::ios::end);
+    	size_t fileLen = check.tellg();
+	check.seekg(0, std::ios::beg);
+
+	ASSERT_EQ(fileLen, 3);
+	char buffer[3];
+	check.read(buffer, 3);
+
+	EXPECT_EQ(std::string(buffer, 3), temp);
+
 	check.close();
 }

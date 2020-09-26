@@ -47,7 +47,7 @@ namespace db
 		}
 	
 		template<typename T>
-		Entity& Update(std::string _key, const T _value)
+		inline Entity& Update(std::string _key, const T _value)
 		{
 			mongocxx::options::update options;
 	
@@ -65,7 +65,7 @@ namespace db
 			return *this;	
 		}
 	
-		bsoncxx::document::view GetView()
+		inline bsoncxx::document::view GetView()
 		{
 			if(!this->value.has_value())
 			{
@@ -86,7 +86,7 @@ namespace db
 		mongocxx::options::find options;
 	
 		template<typename T>
-		EntityQuerier& VaildEqual(std::string _key, const T& _value)
+		inline EntityQuerier& VaildEqual(std::string _key, const T& _value)
 		{
 			this->builder.append(kvp(_key, _value));
 	
@@ -103,54 +103,54 @@ namespace db
 	
 		
 		template<typename T>
-		EntityQuerier& Equal(std::string _key, const T& _value)
+		inline EntityQuerier& Equal(std::string _key, const T& _value)
 		{
 			static_assert(sizeof(T) == -1, "value type not exists");
 			return *this;
 		}
 	
-		EntityQuerier& Equal(std::string _key, const char* _value)
+		inline EntityQuerier& Equal(std::string _key, const char* _value)
 		{
 			return this->VaildEqual(_key, bsoncxx::types::b_utf8(_value));
 		}
 	
-		EntityQuerier& Equal(std::string _key, const std::string& _value)
+		inline EntityQuerier& Equal(std::string _key, const std::string& _value)
 		{
 			return this->VaildEqual(_key, bsoncxx::types::b_utf8(_value));
 		}
 	
-		EntityQuerier& Equal(std::string _key, const bsoncxx::types::b_utf8& _value)
+		inline EntityQuerier& Equal(std::string _key, const bsoncxx::types::b_utf8& _value)
 		{
 			return this->VaildEqual(_key, _value);
 		}
 	
-		EntityQuerier& Equal(std::string _key, const bsoncxx::oid& _value)
+		inline EntityQuerier& Equal(std::string _key, const bsoncxx::oid& _value)
 		{
 			return this->VaildEqual(_key, _value);
 		}
 
-		EntityQuerier& LessThan(std::string _key, const bsoncxx::types::b_date& _value)
+		inline EntityQuerier& LessThan(std::string _key, const bsoncxx::types::b_date& _value)
 		{
 			this->builder.append(kvp(_key, make_document(kvp("$lt", _value))));
 
 			return *this;
 		}
 
-		EntityQuerier& Limit(uint64_t _limit)
+		inline EntityQuerier& Limit(uint64_t _limit)
 		{
 			this->options.limit(_limit);
 
 			return *this;
 		}
 
-		EntityQuerier& Sort(std::string _key, int _value)
+		inline EntityQuerier& Sort(std::string _key, int _value)
 		{
 			this->options.sort(make_document(kvp(_key, _value)));
 
 			return *this;
 		}
 	
-		std::vector<Entity> Find()
+		inline std::vector<Entity> Find()
 		{
 			mongocxx::cursor cursor = this->collection.find(this->builder.extract(), this->options);
 			std::vector<Entity> result;
@@ -161,7 +161,7 @@ namespace db
 			return result;
 		}
 	
-		std::optional<Entity> FindOne()
+		inline std::optional<Entity> FindOne()
 		{
 			bsoncxx::stdx::optional<bsoncxx::document::value> value(this->collection.find_one(this->builder.extract(), this->options));
 		
@@ -196,13 +196,13 @@ namespace db
 	
 		}
 	
-		EntityQuerier Query()
+		inline EntityQuerier Query()
 		{
 			return EntityQuerier(this->pool, this->dbname, this->colname);
 		}
 	
 	
-		Entity Add()
+		inline Entity Add()
 		{
 			auto result = this->collection.insert_one({});
 	
@@ -230,7 +230,7 @@ namespace db
 		bsoncxx::builder::basic::document builder;
 
 		template<typename T>
-		TableQuerier& VaildEqual(std::string _key, const T& _value)
+		inline TableQuerier& VaildEqual(std::string _key, const T& _value)
 		{
 			this->builder.append(kvp(_key, _value));
 		                                                             
@@ -247,33 +247,33 @@ namespace db
 		}
 
 		template<typename T>
-		TableQuerier& Equal(std::string _key, const T& _value)
+		inline TableQuerier& Equal(std::string _key, const T& _value)
 		{
 			static_assert(sizeof(T) == -1, "value type not exists");
 			return *this;
 		}
 		                                                                                                                     
-		TableQuerier& Equal(std::string _key, const char* _value)
+		inline TableQuerier& Equal(std::string _key, const char* _value)
 		{
 			return this->VaildEqual(_key, bsoncxx::types::b_utf8(_value));
 		}
 		                                                                                                                     
-		TableQuerier& Equal(std::string _key, const std::string& _value)
+		inline TableQuerier& Equal(std::string _key, const std::string& _value)
 		{
 			return this->VaildEqual(_key, bsoncxx::types::b_utf8(_value));
 		}
 		                                                                                                                     
-		TableQuerier& Equal(std::string _key, const bsoncxx::types::b_utf8& _value)
+		inline TableQuerier& Equal(std::string _key, const bsoncxx::types::b_utf8& _value)
 		{
 			return this->VaildEqual(_key, _value);
 		}
 		                                                                                                                     
-		TableQuerier& Equal(std::string _key, const bsoncxx::oid& _value)
+		inline TableQuerier& Equal(std::string _key, const bsoncxx::oid& _value)
 		{
 			return this->VaildEqual(_key, _value);
 		}
 		                                                                                                                     
-		std::optional<Table> FindOne()
+		inline std::optional<Table> FindOne()
 		{
 			mongocxx::database db((*this->entry)[this->dbname]);
 
@@ -294,9 +294,9 @@ namespace db
 	class Database
 	{
 	private:
-		static mongocxx::instance instance;
-		static mongocxx::pool pool;
-		static std::string dbname;
+		inline static mongocxx::instance instance = mongocxx::instance{};
+		inline static mongocxx::pool pool = mongocxx::pool{mongocxx::uri{"mongodb://localhost:27017"}};
+		inline static std::string dbname = "testdb";
 
 		mongocxx::pool::entry entry;
 		mongocxx::client* client;
@@ -309,20 +309,20 @@ namespace db
 	
 		}
 
-		Database& UseDb(std::string _dbname)
+		inline Database& UseDb(std::string _dbname)
 		{
 			this->dbname = _dbname;
 			return *this;
 		}
 
-		TableQuerier Query()
+		inline TableQuerier Query()
 		{
 			mongocxx::database db = (*this->client)[this->dbname];
 
 			return TableQuerier(&this->pool, this->dbname);	
 		}
 
-		Table CreateTable(std::string_view _tableName)
+		inline Table CreateTable(std::string_view _tableName)
 		{
 			mongocxx::database db = (*this->client)[this->dbname.c_str()];
 
@@ -332,8 +332,8 @@ namespace db
 			return Table(&this->pool, this->dbname, _tableName.data());
 		}
 	};
-	mongocxx::instance Database::instance = {};
-	//默认链接本地mongodb
-	mongocxx::pool Database::pool = mongocxx::pool{mongocxx::uri{"mongodb://localhost:27017"}};
-	std::string Database::dbname = "testdb";
+	//mongocxx::instance Database::instance = {};
+	////默认链接本地mongodb
+	//mongocxx::pool Database::pool = mongocxx::pool{mongocxx::uri{"mongodb://localhost:27017"}};
+	//std::string Database::dbname = "testdb";
 }
