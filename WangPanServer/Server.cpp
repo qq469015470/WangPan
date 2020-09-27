@@ -10,6 +10,9 @@ std::array<std::string, 32> GetArgs(const std::string& _message)
 	do
 	{
 		left = _message.find_first_not_of(' ', right);
+		if(left == std::string::npos)
+			break;
+
 		right = _message.find(' ', left + 1);
 
 		result[i++] = _message.substr(left, right - left);
@@ -26,6 +29,7 @@ FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 {
 	using TYPE = std::remove_pointer<decltype(this)>::type;
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("login", std::bind(&TYPE::LoginCommand, this, std::placeholders::_1)));
+	this->cmdMap.insert(std::pair<std::string, CommandFunc>("register", std::bind(&TYPE::RegisterCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("upload", std::bind(&TYPE::UploadCommand, this, std::placeholders::_1)));
 }
 
@@ -39,6 +43,16 @@ std::vector<char> FinalReact::LoginCommand(const std::array<std::string, 32>& _a
 		result.clear();
 		result.insert(result.begin(), user->begin(), user->end());
 	}
+	
+	return result;
+}
+
+std::vector<char> FinalReact::RegisterCommand(const std::array<std::string, 32>& _args)
+{
+	std::string temp("register succecss");
+	std::vector<char> result(temp.begin(), temp.end());
+
+	this->userService->Register(_args[1], _args[2]);
 	
 	return result;
 }

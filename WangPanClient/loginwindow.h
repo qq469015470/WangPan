@@ -36,4 +36,5 @@ public:
 	~LoginWindow();
 	
 	void Login();
+	void Register();
 };

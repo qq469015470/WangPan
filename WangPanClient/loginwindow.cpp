@@ -1,6 +1,9 @@
 #include "loginwindow.h"
 #include "mainwindow.h"
 
+#include <QTcpSocket>
+#include <QHostAddress>
+
 LoginWindow::LoginWindow():
 	userLabel(tr("账号:"), this),
 	username(this),
@@ -32,6 +35,7 @@ LoginWindow::LoginWindow():
 	this->setLayout(&this->vBoxLayout);
 	
 	this->connect(&this->loginBtn, &QPushButton::clicked, this, &LoginWindow::Login);
+	this->connect(&this->registerBtn, &QPushButton::clicked, this, &LoginWindow::Register);
 }
 
 LoginWindow::~LoginWindow()
@@ -40,8 +44,85 @@ LoginWindow::~LoginWindow()
 
 void LoginWindow::Login()
 {
-	static MainWindow mainwindow;
+	QTcpSocket qSock;
 
-	mainwindow.show();
-	this->close();
+	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
+	if(qSock.waitForConnected() == false)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("连接服务器失败"));
+		return;
+	}
+
+	std::string temp("login ");
+	temp += this->username.text().toStdString();
+	temp += " ";
+	temp += this->password.text().toStdString();
+
+	if(qSock.write(temp.data(), temp.size()) == -1)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("发送信息失败"));
+		return;
+	}
+
+	qSock.waitForBytesWritten();
+	qSock.waitForReadyRead();
+
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	const qint64 recvLen = qSock.read(buffer, sizeof(buffer));
+	if(recvLen <= 0)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("接收信息失败"));
+		return;
+	}
+
+	temp = std::string(buffer, recvLen);
+	
+	QMessageBox::information(NULL, "", temp.c_str());
+
+	if(temp != "login error")
+	{
+		QMessageBox::information(NULL, tr("信息"), tr("登录成功!"));
+
+		static MainWindow mainwindow;
+
+		mainwindow.show();
+		this->close();
+	}
+}
+
+void LoginWindow::Register()
+{
+	QTcpSocket qSock;
+
+	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
+	if(qSock.waitForConnected() == false)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("连接服务器失败"));
+		return;
+	}
+
+	std::string temp("register ");
+	temp += this->username.text().toStdString();
+	temp += " ";
+	temp += this->password.text().toStdString();
+
+	if(qSock.write(temp.data(), temp.size()) == -1)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("发送信息失败"));
+		return;
+	}
+
+	qSock.waitForBytesWritten();
+	qSock.waitForReadyRead();
+	
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	const qint64 recvLen = qSock.read(buffer, sizeof(buffer));
+	if(recvLen <= 0)
+	{
+		QMessageBox::critical(NULL, tr("错误"), tr("接收信息失败"));
+	}
+	
+	QMessageBox::information(NULL, "", buffer);
 }

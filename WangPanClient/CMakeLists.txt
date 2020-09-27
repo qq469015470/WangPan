@@ -29,9 +29,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Network REQUIRED)
 
 if(ANDROID)
-  add_library(WangPanClient SHARED
+  add_library(${PROJECT_NAME} SHARED
     main.cpp
     loginwindow.cpp
     loginwindow.h
@@ -39,7 +40,7 @@ if(ANDROID)
     mainwindow.h
   )
 else()
-  add_executable(WangPanClient
+  add_executable(${PROJECT_NAME}
     main.cpp
     loginwindow.cpp
     loginwindow.h
@@ -48,4 +49,5 @@ else()
   )
 endif()
 
-target_link_libraries(WangPanClient PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Network)
