@@ -51,6 +51,7 @@ public:
 	~MainWindow();
 
 	void SetToken(std::string _token);
+	void RefreshList(const char* _path);
 
 	void Logout();
 };

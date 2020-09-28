@@ -87,6 +87,7 @@ void LoginWindow::Login()
 		static MainWindow mainwindow;
 
 		mainwindow.SetToken(temp);
+		mainwindow.RefreshList("/");
 		mainwindow.show();
 		this->close();
 	}

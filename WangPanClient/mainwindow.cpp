@@ -88,7 +88,7 @@ MainWindow::MainWindow():
 	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
 	this->gridLayout.addWidget(&this->daohang, 1, 0);
 	this->gridLayout.addWidget(&this->listWidget, 1, 1);
-	//this->setLayout(&this->gridLayout);
+	//this->setLayout(&this->gridLayout);	
 }
 
 MainWindow::~MainWindow()
@@ -204,6 +204,65 @@ void MainWindow::UploadFile()
 	}
 
 	file.close();
+}
+
+void MainWindow::RefreshList(const char* _path)
+{
+	this->listWidget.clear();
+
+	QTcpSocket qSock;
+
+	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
+	
+	if(qSock.waitForConnected() == false)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
+		return;
+	}
+
+	std::string cmd("dir ");
+	cmd += this->token;
+	cmd += ' ';
+	cmd += "/";
+
+	if(qSock.write(cmd.data(), cmd.size()) == -1)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
+		return;
+	}
+
+	qSock.waitForBytesWritten();
+	qSock.waitForReadyRead();
+
+	char buffer[1024];
+	qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
+	if(recvLen <= 0)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
+		return;
+	}
+
+	std::string temp(buffer, recvLen);
+	std::string::size_type left(0);
+	std::string::size_type right(temp.find(' '));
+	size_t fileCount(std::stoll(temp.substr(left, right - left)));
+
+	std::cout << "server:" << temp << std::endl;
+	if(right != std::string::npos)
+		temp = temp.substr(right + 1);
+	do
+	{
+		left = 0;
+		right = temp.find(' ', left);
+
+		std::string filename(temp.substr(left, right - left));
+		std::cout << filename << std::endl;
+		temp = temp.substr(right + 1);
+		
+		this->AddFile(QIcon("/home/administrator/Downloads/chat.ico"), filename.c_str());
+
+		fileCount--;
+	}while(fileCount > 0 && right != std::string::npos);
 }
 
 void MainWindow::SetToken(std::string _token)
