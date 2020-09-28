@@ -156,3 +156,24 @@ TEST_F(ServerTest, UploadTwiceSuccess)
 	
 	close(sockfd);
 }
+
+//显示目录
+TEST_F(ServerTest, Dir)
+{
+	const int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	EXPECT_EQ(Connect(sockfd, "127.0.0.1", 12345), 0);
+
+	{
+		char buffer[1024] = "dir 5f719c3ceca2144f4b36b200 /";
+		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0));
+
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "3 abc.txt hello.txt wenjianjia");
+	}
+
+	close(sockfd);
+}

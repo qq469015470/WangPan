@@ -31,6 +31,7 @@ FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("login", std::bind(&TYPE::LoginCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("register", std::bind(&TYPE::RegisterCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("upload", std::bind(&TYPE::UploadCommand, this, std::placeholders::_1)));
+	this->cmdMap.insert(std::pair<std::string, CommandFunc>("dir", std::bind(&TYPE::DirCommand, this, std::placeholders::_1)));
 }
 
 std::vector<char> FinalReact::LoginCommand(const std::array<std::string, 32>& _args)
@@ -76,6 +77,39 @@ std::vector<char> FinalReact::UploadCommand(const std::array<std::string, 32>& _
 	       	this->fileSize = std::stoll(_args[4]);
 		this->fileService->ParpareFile(this->uploadFileName.c_str(), this->uploadPath.c_str(), this->fileSize);
 		this->curState = State::UPLOAD;
+	}
+
+	return result;
+}
+
+std::vector<char> FinalReact::DirCommand(const std::array<std::string, 32>& _args)
+{
+	std::vector<char> result;
+
+	auto user = this->userService->GetUser(_args[1]);	
+	if(!user.has_value())
+	{
+		std::string temp("token failed!");
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+	}
+	else
+	{
+		std::string path(user->name + _args[2]);
+		std::vector<std::string> files(this->fileService->DirFiles(path.c_str()));
+		std::string temp(std::to_string(files.size()));
+
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+		result.push_back(' ');
+		for(const auto& item: files)
+		{
+			result.insert(result.end(), item.begin(), item.end());
+			result.push_back(' ');
+		}
+		//去掉最后的空格
+		if(result.back() == ' ')
+			result.erase(result.end() - 1);
 	}
 
 	return result;

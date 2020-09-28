@@ -1,6 +1,8 @@
 #include "FileService.h"
 
 #include <array>
+#include <filesystem>
+#include <algorithm>
 
 FileService::FileService()
 {
@@ -9,7 +11,7 @@ FileService::FileService()
 
 void FileService::ParpareFile(const char* _filename, const char* _storePath, size_t _size)
 {
-	std::string writePath(storeBasePath);
+	std::string writePath(this->storeBasePath);
 	writePath += _storePath;
 	writePath += _filename;
 
@@ -98,4 +100,21 @@ void FileService::AcceptFile(const char* _path, size_t _offset, const char* _byt
 		throw std::runtime_error("file not exists");
 	}
 
+}
+
+std::vector<std::string> FileService::DirFiles(const char* _path)
+{
+	std::string path(this->storeBasePath);
+	path += _path;
+
+	std::vector<std::string> files;
+
+	for(const auto& item: std::filesystem::directory_iterator(path))
+	{
+		files.push_back(item.path().filename().string());
+	}
+
+	std::sort(files.begin(), files.end());
+
+	return files;
 }

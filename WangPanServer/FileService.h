@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <vector>
 
 class FileService
 {
@@ -22,4 +23,6 @@ public:
 
 	//接收上传文件的字节
 	void AcceptFile(const char* _path, size_t _offset, const char* _bytes, size_t _len);
+
+	std::vector<std::string> DirFiles(const char* _path);
 };
