@@ -30,7 +30,7 @@ private:
 
 	QPushButton loginBtn;
 	QPushButton registerBtn;
-	
+
 public:
 	LoginWindow();
 	~LoginWindow();

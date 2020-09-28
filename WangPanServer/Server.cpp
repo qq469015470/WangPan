@@ -121,6 +121,12 @@ std::vector<char> FinalReact::GetRecvStr(const char* _message, size_t _len)
 				result.clear();
 				result.insert(result.begin(), temp.begin(), temp.end());
 			}
+			catch(std::logic_error& _ex)
+			{
+				temp = args[0] + " error:" + _ex.what();
+				result.clear();
+				result.insert(result.begin(), temp.begin(), temp.end());
+			}
 
 			break;
 		}
@@ -219,7 +225,7 @@ void Server::RecvClient(epoll_event& _ev)
 	}
 	else
 	{
-		std::cout << "recv:" << buffer << std::endl;
+		std::cout << "recv:" << std::string(buffer, recvLen) << std::endl;
 
 		const std::vector<char> reply = this->reactMap.at(clntSock)->GetRecvStr(buffer, recvLen);
 		if(reply.size() > 0)

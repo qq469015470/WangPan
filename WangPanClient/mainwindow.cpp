@@ -1,7 +1,12 @@
 #include "mainwindow.h"
 #include "loginwindow.h"
 
+#include <QFileDialog>
+#include <QTcpSocket>
+#include <QHostAddress>
+
 #include <iostream>
+#include <fstream>
 
 DaoHang::DaoHang(QWidget* _parent):
 	QWidget(_parent),
@@ -78,6 +83,7 @@ MainWindow::MainWindow():
 
 	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
 	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
+	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
 
 	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
 	this->gridLayout.addWidget(&this->daohang, 1, 0);
@@ -104,6 +110,105 @@ void MainWindow::AddFile(QIcon _icon, QString _filename)
 	QListWidgetItem* const listWidgetItem = this->listWidget.item(this->listWidget.count() - 1);
 	listWidgetItem->setIcon(_icon);	
         listWidgetItem->setSizeHint(ITEM_SIZE);	
+}
+
+void MainWindow::UploadFile()
+{
+	std::string filename(QFileDialog::getOpenFileName(this, tr("上传文件"), "/", tr("所有文件 (*)")).toStdString());
+	if(filename == "")
+		return;
+
+	std::string::size_type pos(filename.find_last_of('/'));
+	if(pos != std::string::npos)
+		pos += 1;
+
+	std::string path(filename.substr(0, pos));
+	std::string name(filename.substr(pos));
+
+	QTcpSocket qSock;
+
+	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
+
+	std::ifstream file(path + name, std::ios::in| std::ios::binary);
+	file.seekg(0, std::ios::end);
+	const size_t fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	std::string cmd("upload ");
+	cmd += this->token;
+	cmd += ' ';
+	cmd += name;
+	cmd += ' ';
+	cmd += '/';
+	cmd += ' ';
+	cmd += std::to_string(fileSize);
+	
+	if(!file.is_open())
+	{
+		QMessageBox::critical(this, tr("错误"), tr("打开文件失败"));	
+		return;
+	}
+
+	if(qSock.waitForConnected() == false)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
+		return;
+	}
+
+	if(qSock.write(cmd.data(), cmd.size()) == -1)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
+		return;
+	}
+
+	qSock.waitForBytesWritten();
+	qSock.waitForReadyRead();
+
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
+	if(recvLen <= 0)
+	{
+		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
+		return;
+	}
+
+	std::string temp(buffer, recvLen);
+	if(temp != "upload ready")
+	{
+		QMessageBox::critical(this, tr("错误"), buffer);
+		return;
+	}
+
+	size_t hadRead(0);
+
+	while(hadRead < fileSize)
+	{
+		const size_t unReadSize = fileSize - hadRead;
+		const size_t readSize = std::min(sizeof(buffer), unReadSize);
+			
+		memset(buffer, 0, sizeof(buffer));
+		file.read(buffer, readSize);
+		hadRead += readSize; 
+		qSock.write(buffer, readSize);
+		qSock.waitForBytesWritten();
+	}
+
+	qSock.waitForReadyRead();
+	recvLen = qSock.read(buffer, sizeof(buffer));	
+	temp = std::string(buffer, recvLen);
+	if(temp != "upload success")
+	{
+		QMessageBox::critical(this, tr("错误"), tr("上传异常"));
+		return;
+	}
+
+	file.close();
+}
+
+void MainWindow::SetToken(std::string _token)
+{
+	this->token = _token;
 }
 
 void MainWindow::Logout()

@@ -112,6 +112,47 @@ TEST_F(ServerTest, UploadSuccess)
 		std::string recvStr(buffer, recvLen);
 		EXPECT_EQ(recvStr, "upload success");
 	}
+
+	std::ifstream check("UserFile/testB/unittestfile.txt", std::ios::in| std::ios::binary);
+
+	EXPECT_TRUE(check.is_open());
+	
+	close(sockfd);
+}
+
+TEST_F(ServerTest, UploadTwiceSuccess)
+{
+	const int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	EXPECT_EQ(Connect(sockfd, "127.0.0.1", 12345), 0);
+
+	{
+		char buffer[1024] = "upload 5349b4ddd2781d08c09890f3 unittestfile2.txt / 3000";
+		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0) != -1);
+		memset(buffer, 0, sizeof(buffer));
+       		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "upload ready");
+	}
+
+	{
+		char buffer[3000];
+		ASSERT_TRUE(send(sockfd, buffer, 1000, 0) != -1);
+		ASSERT_TRUE(send(sockfd, buffer, 1000, 0) != -1);
+		ASSERT_TRUE(send(sockfd, buffer, 1000, 0) != -1);
+
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "upload success");
+	}
+
+	std::ifstream check("UserFile/testB/unittestfile2.txt", std::ios::in| std::ios::binary);
+
+	EXPECT_TRUE(check.is_open());
 	
 	close(sockfd);
 }

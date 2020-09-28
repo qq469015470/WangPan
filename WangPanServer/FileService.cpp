@@ -73,7 +73,7 @@ void FileService::AcceptFile(const char* _path, size_t _offset, const char* _byt
 	//去掉文件名
 	path = path.substr(0, path.find_last_of('/')) + '/';
 
-	std::fstream file((path + uploadName).c_str(), std::ios::in | std::ios::out| std::ios::binary);
+	std::fstream file(path + uploadName, std::ios::in | std::ios::out| std::ios::binary);
 
 	if(file.is_open())
 	{

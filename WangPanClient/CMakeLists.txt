@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 
 project(WangPanClient LANGUAGES CXX)
 
+set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+
 set(QT_DIR "/home/administrator/Qt/5.15.1/gcc_64/lib/cmake/Qt5/")
 set(Qt5_DIR "/home/administrator/Qt/5.15.1/gcc_64/lib/cmake/Qt5/")
 

@@ -30,6 +30,8 @@ class MainWindow: public QWidget
 	Q_OBJECT
 
 private:
+	std::string token;
+
 	QGridLayout gridLayout;	
 
 	QListWidget listWidget;
@@ -42,10 +44,13 @@ private:
 //private slots:
 	void ClickItem(QListWidgetItem* item);
 	void AddFile(QIcon _icon, QString _name);
+	void UploadFile();
 
 public:
 	MainWindow();
 	~MainWindow();
+
+	void SetToken(std::string _token);
 
 	void Logout();
 };

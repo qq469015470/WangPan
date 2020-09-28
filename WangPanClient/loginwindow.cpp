@@ -49,7 +49,7 @@ void LoginWindow::Login()
 	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
 	if(qSock.waitForConnected() == false)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("连接服务器失败"));
+		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
 		return;
 	}
 
@@ -60,7 +60,7 @@ void LoginWindow::Login()
 
 	if(qSock.write(temp.data(), temp.size()) == -1)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("发送信息失败"));
+		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
 		return;
 	}
 
@@ -72,20 +72,21 @@ void LoginWindow::Login()
 	const qint64 recvLen = qSock.read(buffer, sizeof(buffer));
 	if(recvLen <= 0)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("接收信息失败"));
+		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
 		return;
 	}
 
 	temp = std::string(buffer, recvLen);
 	
-	QMessageBox::information(NULL, "", temp.c_str());
+	QMessageBox::information(this, "", temp.c_str());
 
 	if(temp != "login error")
 	{
-		QMessageBox::information(NULL, tr("信息"), tr("登录成功!"));
+		QMessageBox::information(this, tr("信息"), tr("登录成功!"));
 
 		static MainWindow mainwindow;
 
+		mainwindow.SetToken(temp);
 		mainwindow.show();
 		this->close();
 	}
@@ -98,7 +99,7 @@ void LoginWindow::Register()
 	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
 	if(qSock.waitForConnected() == false)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("连接服务器失败"));
+		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
 		return;
 	}
 
@@ -109,7 +110,7 @@ void LoginWindow::Register()
 
 	if(qSock.write(temp.data(), temp.size()) == -1)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("发送信息失败"));
+		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
 		return;
 	}
 
@@ -121,8 +122,9 @@ void LoginWindow::Register()
 	const qint64 recvLen = qSock.read(buffer, sizeof(buffer));
 	if(recvLen <= 0)
 	{
-		QMessageBox::critical(NULL, tr("错误"), tr("接收信息失败"));
+		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
+		return;
 	}
 	
-	QMessageBox::information(NULL, "", buffer);
+	QMessageBox::information(this, "", buffer);
 }
