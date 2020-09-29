@@ -7,6 +7,7 @@
 #include <QSize>
 #include <QGridLayout>
 #include <QVBoxLayout>
+#include <QLabel>
 
 class DaoHang: public QWidget
 {
@@ -20,9 +21,33 @@ private:
 	void OnClicked(QPushButton* _button);
 
 public:
-	DaoHang(QWidget* _parent);
+	DaoHang(QWidget* _parent = nullptr);
 
 	void AddMenu(QString _text);
+};
+
+class Content: public QWidget
+{
+	Q_OBJECT
+
+private:
+	std::string location;
+
+	QGridLayout mainLayout;
+	QHBoxLayout vboxLayout;
+	QListWidget listWidget;
+
+	QPushButton backBtn;
+	QLabel locationLabel;
+
+
+public:
+	Content(QWidget* _parent = nullptr);
+
+	void AddFile(QIcon _icon, QString _filename);
+	void ClearFiles();
+	void ClickItem(QListWidgetItem* item);
+	const std::string& GetLocation() const;
 };
 
 class MainWindow: public QWidget 
@@ -34,16 +59,15 @@ private:
 
 	QGridLayout gridLayout;	
 
-	QListWidget listWidget;
 
 	DaoHang daohang;
+	Content content;
 
 	QHBoxLayout hBoxLayout;
 	QPushButton uploadBtn;
+	QPushButton createDirBtn;
 
 //private slots:
-	void ClickItem(QListWidgetItem* item);
-	void AddFile(QIcon _icon, QString _name);
 	void UploadFile();
 
 public:

@@ -20,7 +20,7 @@ DaoHang::DaoHang(QWidget* _parent):
 	(
 		" \
 		QListWidget { \
-			border: 0; \
+			border: 1px solid rgb(184, 184, 184); \
 		} \
 		\
 		QListWidget::item { \
@@ -52,15 +52,37 @@ void DaoHang::AddMenu(QString _text)
 	this->menu.item(this->menu.count() - 1)->setTextAlignment(Qt::AlignHCenter);
 }
 
-MainWindow::MainWindow():
-	gridLayout(this),
+Content::Content(QWidget* _parent):
+	QWidget(_parent),
+	location("/"),
+	mainLayout(this),
 	listWidget(this),
-	daohang(this),
-	hBoxLayout(),
-	uploadBtn(tr("上传"), this)
+	backBtn(tr("返回上级"), this),
+	locationLabel(tr("当前路径: ") + this->location.c_str(), this)
 {
-	this->setWindowTitle(tr("网盘"));
+	this->setStyleSheet
+	(
+		" \
+		QLabel { \
+			background: white; \
+			border: 1px solid rgb(184, 184, 184); \
+			border-bottom: 0; \
+			padding: 10; \
+		} \
+		  \
+		QPushButton { \
+			padding: 10; \
+		} \
+		"
+	);
 
+	this->vboxLayout.addWidget(&this->backBtn);
+	this->vboxLayout.addWidget(&this->locationLabel);
+	this->mainLayout.addLayout(&this->vboxLayout, 0, 0);
+	//this->mainLayout.addWidget(&this->backBtn, 0, 0);
+	//this->mainLayout.addWidget(&this->locationLabel, 0, 1);
+	this->mainLayout.addWidget(&this->listWidget, 1, 0);
+	
 	const QSize IMAGE_SIZE(64, 64);
 
 	this->listWidget.setIconSize(IMAGE_SIZE);
@@ -70,38 +92,16 @@ MainWindow::MainWindow():
 	this->listWidget.setSpacing(8);
 	this->listWidget.setSelectionMode(QAbstractItemView::ContiguousSelection);
 
-	this->hBoxLayout.addWidget(&this->uploadBtn);
-	this->hBoxLayout.addStretch();
+	this->backBtn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	this->locationLabel.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-	for(int i = 0; i <= 10; i++)
-	{
-		std::string temp("文本");
-
-		temp += std::to_string(i);
-		this->AddFile(QIcon("/home/administrator/Downloads/chat.ico"), temp.c_str());
-	}
-
-	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
-	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
-	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
-
-	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
-	this->gridLayout.addWidget(&this->daohang, 1, 0);
-	this->gridLayout.addWidget(&this->listWidget, 1, 1);
-	//this->setLayout(&this->gridLayout);	
+	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &Content::ClickItem);
+	
+	this->mainLayout.setSpacing(0);
+	this->mainLayout.setContentsMargins(0,0,0,0);
 }
 
-MainWindow::~MainWindow()
-{
-
-}
-
-void MainWindow::ClickItem(QListWidgetItem* item)
-{
-	std::cout << "clickitem" << item << std::endl;
-}
-
-void MainWindow::AddFile(QIcon _icon, QString _filename)
+void Content::AddFile(QIcon _icon, QString _filename)
 {
 	const QSize ITEM_SIZE(100, 100);
 
@@ -110,6 +110,59 @@ void MainWindow::AddFile(QIcon _icon, QString _filename)
 	QListWidgetItem* const listWidgetItem = this->listWidget.item(this->listWidget.count() - 1);
 	listWidgetItem->setIcon(_icon);	
         listWidgetItem->setSizeHint(ITEM_SIZE);	
+}
+
+void Content::ClearFiles()
+{
+	this->listWidget.clear();
+}
+
+void Content::ClickItem(QListWidgetItem* item)
+{
+	std::cout << "clickitem" << item << std::endl;
+}
+
+const std::string& Content::GetLocation() const
+{
+	return this->location;
+}
+
+MainWindow::MainWindow():
+	gridLayout(this),
+	daohang(this),
+	content(this),
+	hBoxLayout(),
+	uploadBtn(tr("上传"), this),
+	createDirBtn(tr("新建文件夹"), this)
+{
+	this->setWindowTitle(tr("网盘"));
+
+	this->hBoxLayout.addWidget(&this->uploadBtn);
+	this->hBoxLayout.addWidget(&this->createDirBtn);
+	this->hBoxLayout.addStretch();
+
+	for(int i = 0; i <= 10; i++)
+	{
+		std::string temp("文本");
+
+		temp += std::to_string(i);
+		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), temp.c_str());
+	}
+
+	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
+	//this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
+	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
+
+	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
+	this->gridLayout.addWidget(&this->daohang, 1, 0);
+	this->gridLayout.addWidget(&this->content, 1, 1);
+	//this->gridLayout.addWidget(&this->listWidget, 1, 1);
+	//this->setLayout(&this->gridLayout);	
+}
+
+MainWindow::~MainWindow()
+{
+
 }
 
 void MainWindow::UploadFile()
@@ -208,7 +261,7 @@ void MainWindow::UploadFile()
 
 void MainWindow::RefreshList(const char* _path)
 {
-	this->listWidget.clear();
+	this->content.ClearFiles();
 
 	QTcpSocket qSock;
 
@@ -223,7 +276,7 @@ void MainWindow::RefreshList(const char* _path)
 	std::string cmd("dir ");
 	cmd += this->token;
 	cmd += ' ';
-	cmd += "/";
+	cmd += this->content.GetLocation();
 
 	if(qSock.write(cmd.data(), cmd.size()) == -1)
 	{
@@ -259,7 +312,7 @@ void MainWindow::RefreshList(const char* _path)
 		std::cout << filename << std::endl;
 		temp = temp.substr(right + 1);
 		
-		this->AddFile(QIcon("/home/administrator/Downloads/chat.ico"), filename.c_str());
+		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), filename.c_str());
 
 		fileCount--;
 	}while(fileCount > 0 && right != std::string::npos);
