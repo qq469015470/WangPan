@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <stdio.h>
+#include <filesystem>
 
 #include "../FileService.h"
 
@@ -60,4 +61,21 @@ TEST(FileServiceTest, AcceptFile)
 	EXPECT_EQ(std::string(buffer, 3), temp);
 
 	check.close();
+}
+
+TEST(FileServiceTest, CreateDirectory)
+{
+	FileService fileService;
+
+	fileService.CreateDirectory("/UnitTestDir");	
+
+	EXPECT_TRUE(std::filesystem::exists("UserFile/UnitTestDir"));
+}
+
+TEST(FileServiceTest, CreateExistsDirectory)
+{
+
+	FileService fileService;
+
+	EXPECT_THROW(fileService.CreateDirectory("/qq469015470"), std::runtime_error);
 }

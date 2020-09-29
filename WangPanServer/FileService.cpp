@@ -102,6 +102,12 @@ void FileService::AcceptFile(const char* _path, size_t _offset, const char* _byt
 
 }
 
+void FileService::CreateDirectory(const char* _path)
+{
+	if(std::filesystem::create_directory(this->storeBasePath + std::string(_path)) == false)
+		throw std::runtime_error("create directory failed!");
+}
+
 std::vector<std::string> FileService::DirFiles(const char* _path)
 {
 	std::string path(this->storeBasePath);
