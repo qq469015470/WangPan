@@ -32,6 +32,7 @@ FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("register", std::bind(&TYPE::RegisterCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("upload", std::bind(&TYPE::UploadCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("dir", std::bind(&TYPE::DirCommand, this, std::placeholders::_1)));
+	this->cmdMap.insert(std::pair<std::string, CommandFunc>("createdir", std::bind(&TYPE::CreateDirCommand, this, std::placeholders::_1)));
 }
 
 std::vector<char> FinalReact::LoginCommand(const std::array<std::string, 32>& _args)
@@ -110,6 +111,28 @@ std::vector<char> FinalReact::DirCommand(const std::array<std::string, 32>& _arg
 		//去掉最后的空格
 		if(result.back() == ' ')
 			result.erase(result.end() - 1);
+	}
+
+	return result;
+}
+
+std::vector<char> FinalReact::CreateDirCommand(const std::array<std::string, 32>& _args)
+{
+	std::vector<char> result;
+
+	auto user = this->userService->GetUser(_args[1]);
+	if(!user.has_value())
+	{
+		std::string temp("token failed!");
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+	}
+	else
+	{
+		this->fileService->CreateDirectory((user->name + _args[2]).c_str());
+		std::string temp("createdir success");
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
 	}
 
 	return result;

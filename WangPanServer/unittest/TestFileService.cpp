@@ -68,8 +68,10 @@ TEST(FileServiceTest, CreateDirectory)
 	FileService fileService;
 
 	fileService.CreateDirectory("/UnitTestDir");	
+	fileService.CreateDirectory("/UnitTestDir/temp");	
 
 	EXPECT_TRUE(std::filesystem::exists("UserFile/UnitTestDir"));
+	EXPECT_TRUE(std::filesystem::exists("UserFile/UnitTestDir/temp"));
 }
 
 TEST(FileServiceTest, CreateExistsDirectory)

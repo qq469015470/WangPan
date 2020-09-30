@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ClientRequest.hpp"
+
 #include <QMainWindow>
 #include <QPushButton>
 #include <QListWidget>
@@ -7,7 +9,12 @@
 #include <QSize>
 #include <QGridLayout>
 #include <QVBoxLayout>
+#include <QFormLayout>
 #include <QLabel>
+#include <QDialog>
+#include <QLineEdit>
+
+class MainWindow;
 
 class DaoHang: public QWidget
 {
@@ -50,11 +57,35 @@ public:
 	const std::string& GetLocation() const;
 };
 
-class MainWindow: public QWidget 
+class CreateDirectoryDialog: public QDialog
 {
 	Q_OBJECT
 
 private:
+	QGridLayout mainLayout;
+	QFormLayout formLayout;
+
+	QLabel dirLabel;
+	QLineEdit dirEdit;
+	QPushButton addBtn;
+	QPushButton celBtn;
+
+	std::string basePath;
+	std::string token;
+	ClientRequest* request;
+
+
+public:
+	CreateDirectoryDialog(QWidget* _parent, std::string _basePath, std::string _token, ClientRequest* _request);
+
+	void CreateDirectory();
+};
+
+class MainWindow: public QWidget 
+{
+	Q_OBJECT
+
+private:	
 	std::string token;
 
 	QGridLayout gridLayout;	
@@ -67,8 +98,11 @@ private:
 	QPushButton uploadBtn;
 	QPushButton createDirBtn;
 
+	ClientRequest request;
+
 //private slots:
 	void UploadFile();
+	void CreateDirectory();
 
 public:
 	MainWindow();

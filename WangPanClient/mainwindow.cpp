@@ -127,6 +127,44 @@ const std::string& Content::GetLocation() const
 	return this->location;
 }
 
+CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent, std::string _basePath, std::string _token, ClientRequest* _request):
+	QDialog(_parent),
+	mainLayout(this),
+	dirLabel(tr("文件夹名称:"), this),
+	dirEdit(this),
+	addBtn(tr("添加"), this),
+	celBtn(tr("取消"), this),
+	basePath(_basePath),
+	token(_token),
+	request(_request)
+{
+	this->formLayout.addRow(&this->dirLabel, &this->dirEdit);
+	this->formLayout.setFormAlignment(Qt::AlignVCenter);
+
+	this->mainLayout.addLayout(&this->formLayout, 0, 0, 1, 2);
+	this->mainLayout.addWidget(&this->addBtn, 1, 0);
+	this->mainLayout.addWidget(&this->celBtn, 1, 1);
+
+	this->addBtn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	this->celBtn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+	this->connect(&this->addBtn, &QPushButton::clicked, this, &std::remove_pointer<decltype(this)>::type::CreateDirectory);
+	this->connect(&this->celBtn, &QPushButton::clicked, this, &QDialog::close);
+}
+
+void CreateDirectoryDialog::CreateDirectory()
+{
+	try
+	{
+		this->request->CreateDirectory(this->token, this->basePath + '/' + this->dirEdit.text().toStdString());
+		this->accept();
+	}
+	catch(std::runtime_error& _ex)
+	{
+		QMessageBox::critical(this, tr("错误"), _ex.what());
+	}
+}
+
 MainWindow::MainWindow():
 	gridLayout(this),
 	daohang(this),
@@ -152,6 +190,7 @@ MainWindow::MainWindow():
 	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
 	//this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
 	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
+	this->connect(&this->createDirBtn, &QPushButton::clicked, this, &MainWindow::CreateDirectory);
 
 	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
 	this->gridLayout.addWidget(&this->daohang, 1, 0);
@@ -259,63 +298,37 @@ void MainWindow::UploadFile()
 	file.close();
 }
 
+void MainWindow::CreateDirectory()
+{
+	CreateDirectoryDialog dialog(this, this->content.GetLocation(), this->token, &this->request);
+
+	if(dialog.exec() == QDialog::Accepted)
+	{
+		this->RefreshList(this->content.GetLocation().c_str());
+	}
+}
+
 void MainWindow::RefreshList(const char* _path)
 {
 	this->content.ClearFiles();
 
-	QTcpSocket qSock;
-
-	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
-	
-	if(qSock.waitForConnected() == false)
+	std::vector<std::string> files;
+	try
 	{
-		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
+		files = this->request.GetFilesList(this->token, this->content.GetLocation());
+	}
+	catch (std::runtime_error& _ex)
+	{
+		QMessageBox::critical(this, tr("错误"), _ex.what());
 		return;
 	}
 
-	std::string cmd("dir ");
-	cmd += this->token;
-	cmd += ' ';
-	cmd += this->content.GetLocation();
-
-	if(qSock.write(cmd.data(), cmd.size()) == -1)
+	for(const auto& item: files)
 	{
-		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
-		return;
+		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), item.c_str());
 	}
 
-	qSock.waitForBytesWritten();
-	qSock.waitForReadyRead();
-
-	char buffer[1024];
-	qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
-	if(recvLen <= 0)
-	{
-		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
-		return;
-	}
-
-	std::string temp(buffer, recvLen);
-	std::string::size_type left(0);
-	std::string::size_type right(temp.find(' '));
-	size_t fileCount(std::stoll(temp.substr(left, right - left)));
-
-	std::cout << "server:" << temp << std::endl;
-	if(right != std::string::npos)
-		temp = temp.substr(right + 1);
-	do
-	{
-		left = 0;
-		right = temp.find(' ', left);
-
-		std::string filename(temp.substr(left, right - left));
-		std::cout << filename << std::endl;
-		temp = temp.substr(right + 1);
-		
-		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), filename.c_str());
-
-		fileCount--;
-	}while(fileCount > 0 && right != std::string::npos);
+	return;
 }
 
 void MainWindow::SetToken(std::string _token)

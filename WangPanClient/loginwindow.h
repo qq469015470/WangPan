@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ClientRequest.hpp"
+
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -30,6 +32,8 @@ private:
 
 	QPushButton loginBtn;
 	QPushButton registerBtn;
+
+	ClientRequest request;
 
 public:
 	LoginWindow();

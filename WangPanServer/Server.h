@@ -46,6 +46,7 @@ private:
 	std::vector<char> RegisterCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> UploadCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> DirCommand(const std::array<std::string, 32>& _args);
+	std::vector<char> CreateDirCommand(const std::array<std::string, 32>& _args);
 
 	void AcceptFileBuffer(const char* _buffer, size_t _len);
 
