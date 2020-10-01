@@ -1,7 +1,6 @@
 #include "loginwindow.h"
 #include "mainwindow.h"
 
-#include <QTcpSocket>
 #include <QHostAddress>
 
 LoginWindow::LoginWindow():
@@ -60,7 +59,7 @@ void LoginWindow::Login()
 	static MainWindow mainwindow;
 
 	mainwindow.SetToken(token);
-	mainwindow.RefreshList("/");
+	mainwindow.RefreshList();
 	mainwindow.show();
 	this->close();
 

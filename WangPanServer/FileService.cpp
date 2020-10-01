@@ -118,6 +118,8 @@ std::vector<std::string> FileService::DirFiles(const char* _path)
 	for(const auto& item: std::filesystem::directory_iterator(path))
 	{
 		files.push_back(item.path().filename().string());
+		if(item.is_directory())
+			files.back() = "*" + files.back();
 	}
 
 	std::sort(files.begin(), files.end());

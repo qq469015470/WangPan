@@ -172,7 +172,7 @@ TEST_F(ServerTest, Dir)
 		ASSERT_TRUE(recvLen > 0);
 
 		std::string recvStr(buffer, recvLen);
-		EXPECT_EQ(recvStr, "3 abc.txt hello.txt wenjianjia");
+		EXPECT_EQ(recvStr, "3 *wenjianjia abc.txt hello.txt");
 	}
 
 	close(sockfd);

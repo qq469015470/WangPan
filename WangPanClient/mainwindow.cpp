@@ -2,7 +2,6 @@
 #include "loginwindow.h"
 
 #include <QFileDialog>
-#include <QTcpSocket>
 #include <QHostAddress>
 
 #include <iostream>
@@ -58,7 +57,10 @@ Content::Content(QWidget* _parent):
 	mainLayout(this),
 	listWidget(this),
 	backBtn(tr("返回上级"), this),
-	locationLabel(tr("当前路径: ") + this->location.c_str(), this)
+	locationLabel(tr("当前路径: ") + this->location.c_str(), this),
+	fileIcon("/home/administrator/Downloads/file.ico"),
+	folderIcon("/home/administrator/Downloads/folder.ico"),
+	locationCallback([](std::string _location){})
 {
 	this->setStyleSheet
 	(
@@ -96,30 +98,71 @@ Content::Content(QWidget* _parent):
 	this->locationLabel.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &Content::ClickItem);
+	this->connect(&this->backBtn, &QPushButton::clicked, this, &Content::BackPath);
 	
 	this->mainLayout.setSpacing(0);
 	this->mainLayout.setContentsMargins(0,0,0,0);
 }
 
-void Content::AddFile(QIcon _icon, QString _filename)
+void Content::BackPath()
 {
-	const QSize ITEM_SIZE(100, 100);
+	std::string::size_type pos(this->location.substr(0, this->location.size() - 1).find_last_of('/'));
 
+	if(pos == std::string::npos)
+		return;
+
+	this->SetLocation(this->location.substr(0, pos) + '/');
+}
+
+void Content::AddFile(QString _filename)
+{
 	//this->listWidget.insertItem(0, _filename);
 	this->listWidget.addItem(_filename);
 	QListWidgetItem* const listWidgetItem = this->listWidget.item(this->listWidget.count() - 1);
-	listWidgetItem->setIcon(_icon);	
-        listWidgetItem->setSizeHint(ITEM_SIZE);	
+	listWidgetItem->setIcon(this->fileIcon);	
+        listWidgetItem->setSizeHint(this->ITEM_SIZE);	
+}
+
+void Content::AddDirectory(QString _filename)
+{
+	this->dirs.insert(_filename.toStdString());
+
+	this->listWidget.addItem(_filename);
+	QListWidgetItem* const listWidgetItem = this-> listWidget.item(this->listWidget.count() - 1);
+	listWidgetItem->setIcon(this->folderIcon);
+	listWidgetItem->setSizeHint(this->ITEM_SIZE);
 }
 
 void Content::ClearFiles()
 {
 	this->listWidget.clear();
+	this->dirs.clear();
 }
 
-void Content::ClickItem(QListWidgetItem* item)
+void Content::ClickItem(QListWidgetItem* _item)
 {
-	std::cout << "clickitem" << item << std::endl;
+	if(this->dirs.find(_item->text().toStdString()) != this->dirs.end())
+	{
+		std::cout << "folder" << std::endl;
+		std::string temp(this->GetLocation());
+		temp += _item->text().toStdString();
+		temp += '/';
+		this->SetLocation(temp);
+	}
+
+	std::cout << "clickitem" << _item << std::endl;
+}
+
+void Content::SetLocation(std::string _location)
+{
+	this->location = _location;
+	this->locationLabel.setText(this->location.c_str());
+	this->locationCallback(this->location);
+}
+
+void Content::LocationChangeCallback(std::function<void(std::string)> _callback)
+{
+	this->locationCallback = _callback;
 }
 
 const std::string& Content::GetLocation() const
@@ -127,16 +170,13 @@ const std::string& Content::GetLocation() const
 	return this->location;
 }
 
-CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent, std::string _basePath, std::string _token, ClientRequest* _request):
+CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent):
 	QDialog(_parent),
 	mainLayout(this),
 	dirLabel(tr("文件夹名称:"), this),
 	dirEdit(this),
 	addBtn(tr("添加"), this),
-	celBtn(tr("取消"), this),
-	basePath(_basePath),
-	token(_token),
-	request(_request)
+	celBtn(tr("取消"), this)
 {
 	this->formLayout.addRow(&this->dirLabel, &this->dirEdit);
 	this->formLayout.setFormAlignment(Qt::AlignVCenter);
@@ -154,15 +194,12 @@ CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent, std::string _base
 
 void CreateDirectoryDialog::CreateDirectory()
 {
-	try
-	{
-		this->request->CreateDirectory(this->token, this->basePath + '/' + this->dirEdit.text().toStdString());
-		this->accept();
-	}
-	catch(std::runtime_error& _ex)
-	{
-		QMessageBox::critical(this, tr("错误"), _ex.what());
-	}
+	this->accept();
+}
+
+QLineEdit& CreateDirectoryDialog::GetDirectoryEdit()
+{
+	return this->dirEdit;
 }
 
 MainWindow::MainWindow():
@@ -179,14 +216,6 @@ MainWindow::MainWindow():
 	this->hBoxLayout.addWidget(&this->createDirBtn);
 	this->hBoxLayout.addStretch();
 
-	for(int i = 0; i <= 10; i++)
-	{
-		std::string temp("文本");
-
-		temp += std::to_string(i);
-		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), temp.c_str());
-	}
-
 	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
 	//this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
 	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
@@ -197,6 +226,11 @@ MainWindow::MainWindow():
 	this->gridLayout.addWidget(&this->content, 1, 1);
 	//this->gridLayout.addWidget(&this->listWidget, 1, 1);
 	//this->setLayout(&this->gridLayout);	
+	
+	this->content.LocationChangeCallback([this](std::string _location)
+	{
+		this->RefreshList();
+	});
 }
 
 MainWindow::~MainWindow()
@@ -209,106 +243,39 @@ void MainWindow::UploadFile()
 	std::string filename(QFileDialog::getOpenFileName(this, tr("上传文件"), "/", tr("所有文件 (*)")).toStdString());
 	if(filename == "")
 		return;
-
-	std::string::size_type pos(filename.find_last_of('/'));
-	if(pos != std::string::npos)
-		pos += 1;
-
-	std::string path(filename.substr(0, pos));
-	std::string name(filename.substr(pos));
-
-	QTcpSocket qSock;
-
-	qSock.connectToHost(QHostAddress("127.0.0.1"), 9999);
-
-	std::ifstream file(path + name, std::ios::in| std::ios::binary);
-	file.seekg(0, std::ios::end);
-	const size_t fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
-
-	std::string cmd("upload ");
-	cmd += this->token;
-	cmd += ' ';
-	cmd += name;
-	cmd += ' ';
-	cmd += '/';
-	cmd += ' ';
-	cmd += std::to_string(fileSize);
 	
-	if(!file.is_open())
+	try
+	{	
+		this->request.UploadFile(this->token, filename);
+	}
+	catch(std::runtime_error& _ex)
 	{
-		QMessageBox::critical(this, tr("错误"), tr("打开文件失败"));	
-		return;
+		QMessageBox::critical(this, tr("错误"), _ex.what());
 	}
 
-	if(qSock.waitForConnected() == false)
-	{
-		QMessageBox::critical(this, tr("错误"), tr("连接服务器失败"));
-		return;
-	}
-
-	if(qSock.write(cmd.data(), cmd.size()) == -1)
-	{
-		QMessageBox::critical(this, tr("错误"), tr("发送信息失败"));
-		return;
-	}
-
-	qSock.waitForBytesWritten();
-	qSock.waitForReadyRead();
-
-	char buffer[1024];
-	memset(buffer, 0, sizeof(buffer));
-	qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
-	if(recvLen <= 0)
-	{
-		QMessageBox::critical(this, tr("错误"), tr("接收信息失败"));
-		return;
-	}
-
-	std::string temp(buffer, recvLen);
-	if(temp != "upload ready")
-	{
-		QMessageBox::critical(this, tr("错误"), buffer);
-		return;
-	}
-
-	size_t hadRead(0);
-
-	while(hadRead < fileSize)
-	{
-		const size_t unReadSize = fileSize - hadRead;
-		const size_t readSize = std::min(sizeof(buffer), unReadSize);
-			
-		memset(buffer, 0, sizeof(buffer));
-		file.read(buffer, readSize);
-		hadRead += readSize; 
-		qSock.write(buffer, readSize);
-		qSock.waitForBytesWritten();
-	}
-
-	qSock.waitForReadyRead();
-	recvLen = qSock.read(buffer, sizeof(buffer));	
-	temp = std::string(buffer, recvLen);
-	if(temp != "upload success")
-	{
-		QMessageBox::critical(this, tr("错误"), tr("上传异常"));
-		return;
-	}
-
-	file.close();
+	this->RefreshList();
+	QMessageBox::information(this, tr("信息"), tr("上传完毕"));
 }
 
 void MainWindow::CreateDirectory()
 {
-	CreateDirectoryDialog dialog(this, this->content.GetLocation(), this->token, &this->request);
+	CreateDirectoryDialog dialog(this);
 
 	if(dialog.exec() == QDialog::Accepted)
 	{
-		this->RefreshList(this->content.GetLocation().c_str());
+		try
+		{
+			this->request.CreateDirectory(this->token, this->content.GetLocation() + '/' + dialog.GetDirectoryEdit().text().toStdString());
+		}
+		catch(std::runtime_error& _ex)
+		{
+			QMessageBox::critical(this, tr("错误"), _ex.what());
+		}
+		this->RefreshList();
 	}
 }
 
-void MainWindow::RefreshList(const char* _path)
+void MainWindow::RefreshList()
 {
 	this->content.ClearFiles();
 
@@ -325,7 +292,17 @@ void MainWindow::RefreshList(const char* _path)
 
 	for(const auto& item: files)
 	{
-		this->content.AddFile(QIcon("/home/administrator/Downloads/chat.ico"), item.c_str());
+		std::string filename(item);
+		if(item.front() == '*')
+		{
+			filename = filename.substr(1);
+			this->content.AddDirectory(filename.c_str());
+		}
+		else
+		{
+			this->content.AddFile(filename.c_str());
+		}
+
 	}
 
 	return;
