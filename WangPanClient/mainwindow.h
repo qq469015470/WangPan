@@ -68,7 +68,7 @@ public:
 	void AddFile(QString _filename);
 	void AddDirectory(QString _filename);
 	void ClearFiles();
-	void ClickItem(QListWidgetItem* item);
+	void DoubleClickItem(QListWidgetItem* item);
 	void SetLocation(std::string _location);
 	const std::string& GetLocation() const;
 

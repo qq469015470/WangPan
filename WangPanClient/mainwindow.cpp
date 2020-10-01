@@ -69,11 +69,11 @@ Content::Content(QWidget* _parent):
 			background: white; \
 			border: 1px solid rgb(184, 184, 184); \
 			border-bottom: 0; \
-			padding: 10; \
+			padding: 10px; \
 		} \
 		  \
 		QPushButton { \
-			padding: 10; \
+			padding: 10px; \
 		} \
 		"
 	);
@@ -97,7 +97,7 @@ Content::Content(QWidget* _parent):
 	this->backBtn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 	this->locationLabel.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-	this->connect(&this->listWidget, &QListWidget::itemClicked, this, &Content::ClickItem);
+	this->connect(&this->listWidget, &QListWidget::itemDoubleClicked, this, &Content::DoubleClickItem);
 	this->connect(&this->backBtn, &QPushButton::clicked, this, &Content::BackPath);
 	
 	this->mainLayout.setSpacing(0);
@@ -139,7 +139,7 @@ void Content::ClearFiles()
 	this->dirs.clear();
 }
 
-void Content::ClickItem(QListWidgetItem* _item)
+void Content::DoubleClickItem(QListWidgetItem* _item)
 {
 	if(this->dirs.find(_item->text().toStdString()) != this->dirs.end())
 	{
@@ -156,7 +156,7 @@ void Content::ClickItem(QListWidgetItem* _item)
 void Content::SetLocation(std::string _location)
 {
 	this->location = _location;
-	this->locationLabel.setText(this->location.c_str());
+	this->locationLabel.setText(tr("当前路径:") + this->location.c_str());
 	this->locationCallback(this->location);
 }
 
