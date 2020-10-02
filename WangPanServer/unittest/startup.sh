@@ -8,6 +8,7 @@ EOF
 mkdir -p UserFile/qq469015470
 mkdir -p UserFile/testB
 mkdir -p UserFile/testDir
+mkdir -p UserFile/testDir/removedir
 mkdir -p UserFile/UnitTestDelete
 
 touch UserFile/qq469015470/test.txt

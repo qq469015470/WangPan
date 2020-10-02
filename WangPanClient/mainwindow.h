@@ -46,8 +46,13 @@ private:
 	std::string location;
 
 	QGridLayout mainLayout;
-	QHBoxLayout vboxLayout;
+	QHBoxLayout btnLayout;
+	QHBoxLayout addressLayout;
 	QListWidget listWidget;
+
+	QPushButton uploadBtn;
+	QPushButton createDirBtn;
+	QPushButton removeBtn;
 
 	QPushButton backBtn;
 	QLabel locationLabel;
@@ -58,6 +63,9 @@ private:
 	//用于判断是否属于文件夹
 	std::unordered_set<std::string> dirs;
 
+	std::function<void()> uploadBtnCallback;
+	std::function<void()> createDirBtnCallback;
+	std::function<void()> removeBtnCallback;
 	std::function<void(std::string)> locationCallback;
 
 	void BackPath();
@@ -71,9 +79,13 @@ public:
 	void DoubleClickItem(QListWidgetItem* item);
 	void SetLocation(std::string _location);
 	const std::string& GetLocation() const;
+	const QList<QListWidgetItem*> GetSelectedItems() const;
 
 	//目录变更回调
-	void LocationChangeCallback(std::function<void(std::string)>);
+	void LocationChangeCallback(std::function<void(std::string)> _callback);
+	void UploadBtnClickedCallback(std::function<void()> _callback);
+	void CreateDirBtnClickedCallback(std::function<void()> _callback);
+	void RemoveBtnClickedCallback(std::function<void()> _callback);
 };
 
 class CreateDirectoryDialog: public QDialog
@@ -108,10 +120,6 @@ private:
 
 	DaoHang daohang;
 	Content content;
-
-	QHBoxLayout hBoxLayout;
-	QPushButton uploadBtn;
-	QPushButton createDirBtn;
 
 	ClientRequest request;	
 

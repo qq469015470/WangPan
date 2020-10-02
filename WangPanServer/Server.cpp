@@ -33,6 +33,7 @@ FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("upload", std::bind(&TYPE::UploadCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("dir", std::bind(&TYPE::DirCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("createdir", std::bind(&TYPE::CreateDirCommand, this, std::placeholders::_1)));
+	this->cmdMap.insert(std::pair<std::string, CommandFunc>("rmfile", std::bind(&TYPE::RemoveFileCommand, this, std::placeholders::_1)));
 }
 
 std::vector<char> FinalReact::LoginCommand(const std::array<std::string, 32>& _args)
@@ -133,6 +134,26 @@ std::vector<char> FinalReact::CreateDirCommand(const std::array<std::string, 32>
 		std::string temp("createdir success");
 		result.clear();
 		result.insert(result.begin(), temp.begin(), temp.end());
+	}
+
+	return result;
+}
+
+std::vector<char> FinalReact::RemoveFileCommand(const std::array<std::string, 32>& _args)
+{
+	std::string temp("rmfile success");
+	std::vector<char> result(temp.begin(), temp.end());
+	
+	auto user = this->userService->GetUser(_args[1]);	
+	if(!user.has_value())
+	{
+		std::string temp("token failed!");
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+	}
+	else
+	{
+		this->fileService->RemoveFile((user->name + _args[2]).c_str());
 	}
 
 	return result;

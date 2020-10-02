@@ -127,7 +127,7 @@ TEST_F(ServerTest, UploadTwiceSuccess)
 
 	{
 		char buffer[1024] = "upload 5349b4ddd2781d08c09890f3 unittestfile2.txt / 3000";
-		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0) != -1);
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
 		memset(buffer, 0, sizeof(buffer));
        		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
 		ASSERT_TRUE(recvLen > 0);
@@ -165,14 +165,14 @@ TEST_F(ServerTest, Dir)
 
 	{
 		char buffer[1024] = "dir 5f719c3ceca2144f4b36b200 /";
-		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0));
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
 
 		memset(buffer, 0, sizeof(buffer));
 		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
 		ASSERT_TRUE(recvLen > 0);
 
 		std::string recvStr(buffer, recvLen);
-		EXPECT_EQ(recvStr, "3 *wenjianjia abc.txt hello.txt");
+		EXPECT_EQ(recvStr, "4 *removedir *wenjianjia abc.txt hello.txt");
 	}
 
 	close(sockfd);
@@ -185,7 +185,7 @@ TEST_F(ServerTest, CreateDir)
 
 	{
 		char buffer[1024] = "createdir 5f719c3ceca2144f4b36b200 /TestCreateDir"; 
-		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0));
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
 
 		memset(buffer, 0, sizeof(buffer));
 		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
@@ -194,4 +194,23 @@ TEST_F(ServerTest, CreateDir)
 		std::string recvStr(buffer, recvLen);
 		EXPECT_EQ(recvStr, "createdir success");
 	}
+}
+
+TEST_F(ServerTest, RemoveFile)
+{
+	const int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	EXPECT_EQ(Connect(sockfd, "127.0.0.1", 12345), 0);
+
+	{
+		char buffer[1024] = "rmfile 5f719c3ceca2144f4b36b200 /removedir";
+		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0));
+
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "rmfile success");
+	}
+
 }

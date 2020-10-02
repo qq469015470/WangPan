@@ -162,7 +162,6 @@ public:
 		cmd += ' ';
 		cmd += _path;
 
-
 		if(qSock.write(cmd.data(), cmd.size()) == -1)
 		{
 			throw std::runtime_error("发送信息失败");
@@ -256,5 +255,35 @@ public:
 		}
 
 		file.close();
+	}
+
+	inline void RemoveFile(const std::string& _token, const std::string& _path)
+	{
+		QTcpSocket qSock;
+		this->ConnectToHost(&qSock);
+		
+		std::string cmd("rmfile ");
+		cmd += _token;
+		cmd += ' ';
+		cmd += _path;
+
+		if(qSock.write(cmd.data(), cmd.size()) == -1)
+		{
+			throw std::runtime_error("发送信息失败");
+		}
+	
+		qSock.waitForBytesWritten();
+		qSock.waitForReadyRead();
+	
+		char buffer[1024];
+		qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
+		if(recvLen <= 0)
+		{
+			throw std::runtime_error("接收信息失败");
+		}
+
+		std::string temp(buffer, recvLen);
+		if(temp != "rmfile success")
+			throw std::runtime_error(temp);
 	}
 };

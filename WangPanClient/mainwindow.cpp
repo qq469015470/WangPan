@@ -56,12 +56,21 @@ Content::Content(QWidget* _parent):
 	location("/"),
 	mainLayout(this),
 	listWidget(this),
+	uploadBtn(tr("上传"), this),
+	createDirBtn(tr("新建文件夹"), this),
+	removeBtn(tr("删除所选"), this),
 	backBtn(tr("返回上级"), this),
 	locationLabel(tr("当前路径: ") + this->location.c_str(), this),
 	fileIcon("/home/administrator/Downloads/file.ico"),
 	folderIcon("/home/administrator/Downloads/folder.ico"),
+	uploadBtnCallback([](){}),
+	createDirBtnCallback([](){}),
+	removeBtnCallback([](){}),
 	locationCallback([](std::string _location){})
 {
+	this->removeBtn.hide();
+	this->removeBtn.setStyleSheet("QPushButton{color: red;}");
+
 	this->setStyleSheet
 	(
 		" \
@@ -78,12 +87,21 @@ Content::Content(QWidget* _parent):
 		"
 	);
 
-	this->vboxLayout.addWidget(&this->backBtn);
-	this->vboxLayout.addWidget(&this->locationLabel);
-	this->mainLayout.addLayout(&this->vboxLayout, 0, 0);
+	this->btnLayout.addWidget(&this->uploadBtn);
+	this->btnLayout.addWidget(&this->createDirBtn);
+	this->btnLayout.addWidget(&this->removeBtn);
+	this->btnLayout.addStretch();
+	this->btnLayout.setContentsMargins(0, 0, 0, 8);
+	this->btnLayout.setSpacing(5);
+
+	this->addressLayout.addWidget(&this->backBtn);
+	this->addressLayout.addWidget(&this->locationLabel);
+
+	this->mainLayout.addLayout(&this->btnLayout, 0, 0);
+	this->mainLayout.addLayout(&this->addressLayout, 1, 0);
 	//this->mainLayout.addWidget(&this->backBtn, 0, 0);
 	//this->mainLayout.addWidget(&this->locationLabel, 0, 1);
-	this->mainLayout.addWidget(&this->listWidget, 1, 0);
+	this->mainLayout.addWidget(&this->listWidget, 2, 0);
 	
 	const QSize IMAGE_SIZE(64, 64);
 
@@ -97,7 +115,18 @@ Content::Content(QWidget* _parent):
 	this->backBtn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 	this->locationLabel.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+	this->connect(&this->uploadBtn, &QPushButton::clicked, this, [this](){this->uploadBtnCallback();});
+	this->connect(&this->createDirBtn, &QPushButton::clicked, this, [this](){this->createDirBtnCallback();});
+	this->connect(&this->removeBtn, &QPushButton::clicked, this, [this](){this->removeBtnCallback();});
 	this->connect(&this->listWidget, &QListWidget::itemDoubleClicked, this, &Content::DoubleClickItem);
+	this->connect(&this->listWidget, &QListWidget::itemSelectionChanged, this, [this]()
+	{
+		if(this->listWidget.selectedItems().count() > 0)
+			this->removeBtn.show();
+		else
+			this->removeBtn.hide();
+	});
+
 	this->connect(&this->backBtn, &QPushButton::clicked, this, &Content::BackPath);
 	
 	this->mainLayout.setSpacing(0);
@@ -165,9 +194,29 @@ void Content::LocationChangeCallback(std::function<void(std::string)> _callback)
 	this->locationCallback = _callback;
 }
 
+void Content::UploadBtnClickedCallback(std::function<void()> _callback)
+{
+	this->uploadBtnCallback = _callback;
+}
+
+void Content::CreateDirBtnClickedCallback(std::function<void()> _callback)
+{
+	this->createDirBtnCallback = _callback;
+}
+
+void Content::RemoveBtnClickedCallback(std::function<void()> _callback)
+{
+	this->removeBtnCallback = _callback;
+}
+
 const std::string& Content::GetLocation() const
 {
 	return this->location;
+}
+
+const QList<QListWidgetItem*> Content::GetSelectedItems() const
+{
+	return this->listWidget.selectedItems();
 }
 
 CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent):
@@ -178,6 +227,7 @@ CreateDirectoryDialog::CreateDirectoryDialog(QWidget* _parent):
 	addBtn(tr("添加"), this),
 	celBtn(tr("取消"), this)
 {
+
 	this->formLayout.addRow(&this->dirLabel, &this->dirEdit);
 	this->formLayout.setFormAlignment(Qt::AlignVCenter);
 
@@ -205,30 +255,42 @@ QLineEdit& CreateDirectoryDialog::GetDirectoryEdit()
 MainWindow::MainWindow():
 	gridLayout(this),
 	daohang(this),
-	content(this),
-	hBoxLayout(),
-	uploadBtn(tr("上传"), this),
-	createDirBtn(tr("新建文件夹"), this)
-{
+	content(this)
+{	
 	this->setWindowTitle(tr("网盘"));
-
-	this->hBoxLayout.addWidget(&this->uploadBtn);
-	this->hBoxLayout.addWidget(&this->createDirBtn);
-	this->hBoxLayout.addStretch();
 
 	//this->connect(&this->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(ClickItem(QListWidgetItem*)));
 	//this->connect(&this->listWidget, &QListWidget::itemClicked, this, &MainWindow::ClickItem);
-	this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
-	this->connect(&this->createDirBtn, &QPushButton::clicked, this, &MainWindow::CreateDirectory);
+	//this->connect(&this->uploadBtn, &QPushButton::clicked, this, &MainWindow::UploadFile);
+	//this->connect(&this->createDirBtn, &QPushButton::clicked, this, &MainWindow::CreateDirectory);
+	
 
-	this->gridLayout.addLayout(&this->hBoxLayout, 0, 1);
-	this->gridLayout.addWidget(&this->daohang, 1, 0);
-	this->gridLayout.addWidget(&this->content, 1, 1);
+	this->gridLayout.addWidget(&this->daohang, 0, 0);
+	this->gridLayout.addWidget(&this->content, 0, 1);
 	//this->gridLayout.addWidget(&this->listWidget, 1, 1);
 	//this->setLayout(&this->gridLayout);	
 	
 	this->content.LocationChangeCallback([this](std::string _location)
 	{
+		this->RefreshList();
+	});
+
+	this->content.UploadBtnClickedCallback(std::bind(&MainWindow::UploadFile, this));
+	this->content.CreateDirBtnClickedCallback(std::bind(&MainWindow::CreateDirectory, this));
+	this->content.RemoveBtnClickedCallback([this]()
+	{
+		std::string location(this->content.GetLocation());
+		for(const auto& item: this->content.GetSelectedItems())
+		{
+			try
+			{
+				this->request.RemoveFile(this->token, location + item->text().toStdString());
+			}
+			catch(std::runtime_error& _ex)
+			{
+				QMessageBox::critical(this, tr("错误"), _ex.what());
+			}
+		}
 		this->RefreshList();
 	});
 }
