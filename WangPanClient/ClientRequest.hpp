@@ -183,7 +183,7 @@ public:
 			throw std::runtime_error(temp);
 	}
 
-	inline void UploadFile(const std::string& _token, const std::string& _filename)
+	inline void UploadFile(const std::string& _token, const std::string& _filename, const char* _remoteDir)
 	{
 		std::string::size_type pos(_filename.find_last_of('/'));
 		if(pos != std::string::npos)
@@ -210,7 +210,7 @@ public:
 		cmd += ' ';
 		cmd += name;
 		cmd += ' ';
-		cmd += '/';
+		cmd += _remoteDir;
 		cmd += ' ';
 		cmd += std::to_string(fileSize);	
 

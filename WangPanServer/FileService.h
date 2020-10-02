@@ -26,5 +26,7 @@ public:
 	
 	void CreateDirectory(const char* _path);
 
+	void RemoveFile(const char* _path);
+
 	std::vector<std::string> DirFiles(const char* _path);
 };

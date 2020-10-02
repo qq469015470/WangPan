@@ -246,7 +246,7 @@ void MainWindow::UploadFile()
 	
 	try
 	{	
-		this->request.UploadFile(this->token, filename);
+		this->request.UploadFile(this->token, filename, this->content.GetLocation().c_str());
 	}
 	catch(std::runtime_error& _ex)
 	{

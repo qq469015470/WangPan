@@ -76,8 +76,15 @@ TEST(FileServiceTest, CreateDirectory)
 
 TEST(FileServiceTest, CreateExistsDirectory)
 {
-
 	FileService fileService;
 
 	EXPECT_THROW(fileService.CreateDirectory("/qq469015470"), std::runtime_error);
+}
+
+TEST(FileServiceTest, RemoveFile)
+{
+	FileService fileService;
+
+	EXPECT_NO_THROW(fileService.RemoveFile("/UnitTestDelete"));
+	EXPECT_FALSE(std::filesystem::exists("UserFile/UnitTestDelete"));
 }

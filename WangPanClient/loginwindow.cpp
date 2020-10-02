@@ -75,5 +75,8 @@ void LoginWindow::Register()
 	catch(std::runtime_error& _ex)
 	{
 		QMessageBox::critical(this, tr("错误"), _ex.what());
+		return;
 	}
+
+	QMessageBox::information(this, tr("信息"), tr("注册成功"));
 }

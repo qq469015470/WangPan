@@ -108,6 +108,12 @@ void FileService::CreateDirectory(const char* _path)
 		throw std::runtime_error("create directory failed!");
 }
 
+void FileService::RemoveFile(const char* _path)
+{
+	if(std::filesystem::remove(this->storeBasePath + std::string(_path)) == false)
+		throw std::runtime_error("remove file failed!");
+}
+
 std::vector<std::string> FileService::DirFiles(const char* _path)
 {
 	std::string path(this->storeBasePath);
