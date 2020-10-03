@@ -42,6 +42,12 @@ if(ANDROID)
     loginwindow.h
     mainwindow.cpp
     mainwindow.h
+    DaoHang.h
+    Daohang.cpp
+    FileView.h
+    FileView.cpp
+    CreateDirectoryDialog.h
+    CreateDirectoryDialog.cpp
   )
 else()
   add_executable(${PROJECT_NAME}
@@ -50,6 +56,12 @@ else()
     loginwindow.h
     mainwindow.cpp
     mainwindow.h
+    DaoHang.h
+    DaoHang.cpp
+    FileView.h
+    FileView.cpp
+    CreateDirectoryDialog.h
+    CreateDirectoryDialog.cpp
   )
 endif()
 
