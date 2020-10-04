@@ -30,9 +30,6 @@ DaoHang::DaoHang(QWidget* _parent):
 	this->mainLayout.setContentsMargins(0,0,0,0);
 	this->mainLayout.addWidget(&this->menu);
 
-	this->AddMenu(tr("文件列表"));
-	this->AddMenu(tr("上传列表"));
-
 	this->connect(&this->menu, &QListWidget::itemSelectionChanged, this, [this]()
 	{
 		this->menuSelectedChangeCallback(this->menu.currentRow());

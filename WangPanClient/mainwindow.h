@@ -4,6 +4,7 @@
 #include "DaoHang.h"
 #include "FileView.h"
 #include "CreateDirectoryDialog.h"
+#include "UploadView.h"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -24,8 +25,7 @@ private:
 
 	DaoHang daohang;
 	FileView fileView;
-
-	QWidget uploadView;
+	UploadView uploadView;
 
 	ClientRequest request;	
 

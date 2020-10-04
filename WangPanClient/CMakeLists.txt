@@ -46,6 +46,8 @@ if(ANDROID)
     Daohang.cpp
     FileView.h
     FileView.cpp
+    UploadView.h
+    UploadView.cpp
     CreateDirectoryDialog.h
     CreateDirectoryDialog.cpp
   )
@@ -60,6 +62,8 @@ else()
     DaoHang.cpp
     FileView.h
     FileView.cpp
+    UploadView.h
+    UploadView.cpp
     CreateDirectoryDialog.h
     CreateDirectoryDialog.cpp
   )
@@ -67,3 +71,4 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(${PROJECT_NAME} PRIVATE pthread)

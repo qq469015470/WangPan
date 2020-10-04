@@ -6,12 +6,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 MainWindow::MainWindow():
 	gridLayout(this),
 	content(this),
 	daohang(this),
-	fileView(this)
+	fileView(this),
+	uploadView(this)
 {	
 	this->setWindowTitle(tr("网盘"));
 
@@ -25,6 +27,7 @@ MainWindow::MainWindow():
 	this->gridLayout.addWidget(&this->content, 0, 1);
 
 	this->content.addWidget(&this->fileView);
+	this->content.addWidget(&this->uploadView);
 	this->content.addWidget(&this->uploadView);
 
 	//this->gridLayout.addWidget(&this->fileView, 0, 1);
@@ -58,6 +61,10 @@ MainWindow::MainWindow():
 	{
 		this->content.setCurrentIndex(_index);
 	});
+
+	this->daohang.AddMenu(tr("我的网盘"));
+	this->daohang.AddMenu(tr("上传列表"));
+	this->daohang.AddMenu(tr("下载列表"));
 }
 
 MainWindow::~MainWindow()
@@ -67,13 +74,30 @@ MainWindow::~MainWindow()
 
 void MainWindow::UploadFile()
 {
-	std::string filename(QFileDialog::getOpenFileName(this, tr("上传文件"), "/", tr("所有文件 (*)")).toStdString());
-	if(filename == "")
+	std::string path(QFileDialog::getOpenFileName(this, tr("上传文件"), "/", tr("所有文件 (*)")).toStdString());
+	if(path == "")
 		return;
+
+	std::string filename(path);
+	std::string::size_type pos(path.find_last_of('/'));
+	if(pos != std::string::npos)
+		filename = filename.substr(pos + 1);
+
+	std::thread thread([this]()
+	{
+		for(int i = 0; i < 20;i++)
+		{
+			this->uploadView.AddItem(std::to_string(i), i);
+		}	
+	});
+
+	thread.detach();
+
+	return;	
 	
 	try
 	{	
-		this->request.UploadFile(this->token, filename, this->fileView.GetLocation().c_str());
+		this->request.UploadFile(this->token, path, this->fileView.GetLocation().c_str());
 	}
 	catch(std::runtime_error& _ex)
 	{
