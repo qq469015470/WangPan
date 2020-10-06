@@ -1,6 +1,6 @@
 # 项目描述
 * 网盘系统,包含客户端及服务器。 <br>
-* 数据库使用mongodb，安装连接:https://www.mongodb.com/try/download/community。 <br>
+* 数据库使用mongodb，安装连接:https://www.mongodb.com/try/download/community <br>
 * 服务器使用epoll模型，接收客户端信息，接收的客户端文件存放在UserFile文件夹，例如账号admin存放的文件目录位于文件夹/UserFile/admin/下。 <br>
 * 客户端使用QT框架，使用QTcpSocket与服务器连接。 <br>
 * 目录下的WangPanClient为客户端代码文件，WangPanServer为服务器代码文件，WangPanServer下的unittest为单元测试代码文件。
