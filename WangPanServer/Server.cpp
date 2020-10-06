@@ -25,7 +25,11 @@ std::array<std::string, 32> GetArgs(const std::string& _message)
 FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 		userService(_userService),
 		fileService(_fileService),
-		curState(State::CORE)
+		curState(State::CORE),
+		uploadPath(""),
+		uploadFileName(""),
+		offset(0),
+		fileSize(0)
 {
 	using TYPE = std::remove_pointer<decltype(this)>::type;
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("login", std::bind(&TYPE::LoginCommand, this, std::placeholders::_1)));
@@ -77,8 +81,17 @@ std::vector<char> FinalReact::UploadCommand(const std::array<std::string, 32>& _
 		this->uploadFileName = _args[2];
 		this->offset = 0;
 	       	this->fileSize = std::stoll(_args[4]);
-		this->fileService->ParpareFile(this->uploadFileName.c_str(), this->uploadPath.c_str(), this->fileSize);
-		this->curState = State::UPLOAD;
+		try
+		{
+			this->fileService->ParpareFile(this->uploadFileName.c_str(), this->uploadPath.c_str(), this->fileSize);
+			this->curState = State::UPLOAD;
+		}
+		catch(std::logic_error& _ex)
+		{
+			temp = _ex.what();	
+			result.clear();
+			result.insert(result.begin(), temp.begin(), temp.end());
+		}
 	}
 
 	return result;
@@ -233,6 +246,19 @@ std::vector<char> FinalReact::GetRecvStr(const char* _message, size_t _len)
 	return result;
 }
 
+void FinalReact::ClientClose()
+{
+	if(this->curState == State::UPLOAD 
+	&& this->offset != this->fileSize)
+	{
+		this->fileService->RemoveFile((this->uploadPath + this->uploadFileName + "." + FileService::fileSuffix).c_str());
+		this->uploadPath = "";
+		this->uploadFileName = "";
+		this->offset = 0;
+		this->fileSize = 0;
+	}	
+}
+
 Server::Server():
 	epfd(0),
 	serverSock(0),
@@ -296,15 +322,16 @@ void Server::RecvClient(epoll_event& _ev)
 	memset(buffer, 0 , sizeof(buffer));
 
 	const int recvLen = recv(clntSock, buffer, sizeof(buffer), 0);
+	const auto& react = this->reactMap.at(clntSock);
 	if(recvLen <= 0)
 	{
 		std::cout << "client close" << std::endl;
+		react->ClientClose();
 		this->CloseClient(_ev);
-
 	}
 	else
 	{
-		const std::vector<char> reply = this->reactMap.at(clntSock)->GetRecvStr(buffer, recvLen);
+		const std::vector<char> reply = react->GetRecvStr(buffer, recvLen);
 		if(reply.size() > 0)
 			send(clntSock, reply.data(), reply.size(), 0);
 	}

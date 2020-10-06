@@ -19,6 +19,8 @@ public:
 	virtual ~IRecvReact() = default;
 
 	virtual std::vector<char> GetRecvStr(const char* _message, size_t _len) = 0;
+	//客户端断开连接(用于处理如上传时中断的情况)
+	virtual void ClientClose() = 0;
 };
 
 class FinalReact: virtual public IRecvReact
@@ -55,6 +57,7 @@ public:
 	FinalReact(UserService* _userService, FileService* _fileService);
 
 	virtual	std::vector<char> GetRecvStr(const char* _message, size_t _len) override;
+	virtual void ClientClose() override;
 };
 
 

@@ -60,7 +60,7 @@ private:
 public:
 	UploadView(QWidget* _parent);
 
-	const UploadViewModel::Info* AddItem(std::string _filename, int _progress, std::string _status);
+	UploadViewModel::Info* const AddItem(std::string _filename, int _progress, std::string _status);
 	void SetItem(const UploadViewModel::Info* _info, int _progress, std::string _status);
 	void RemoveItem(const UploadViewModel::Info* _info);
 };

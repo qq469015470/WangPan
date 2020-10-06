@@ -6,12 +6,11 @@
 
 class FileService
 {
-private:
+public:
 	static inline const char* storeBasePath = "./UserFile/";
 	//上传中文件的后缀
 	static inline const char* fileSuffix = "upload"; 
 
-public:
 	FileService();
 
 	//初始化要上传的文件

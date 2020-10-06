@@ -141,7 +141,7 @@ UploadView::UploadView(QWidget* _parent):
 	this->list.setItemDelegate(&this->delegate);
 }
 
-const UploadViewModel::Info* UploadView::AddItem(std::string _filename, int _progress, std::string _status)
+UploadViewModel::Info* const UploadView::AddItem(std::string _filename, int _progress, std::string _status)
 {
 	auto& temp = this->model.getData();
 	temp.push_back(std::make_unique<UploadViewModel::Info>(UploadViewModel::Info{_filename, _progress, _status}));

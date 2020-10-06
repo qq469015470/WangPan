@@ -85,6 +85,35 @@ TEST_F(ServerTest, UploadTokenFailed)
 	close(sockfd);
 }
 
+//测试客户端下载一半断开
+TEST_F(ServerTest, UploadHalf)
+{
+	const int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	EXPECT_EQ(Connect(sockfd, "127.0.0.1", 12345), 0);
+	
+	{
+		char buffer[1024] = "upload 5349b4ddd2781d08c09890f3 uploadhalf / 1024";
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "upload ready");
+	
+		ASSERT_NE(send(sockfd, buffer, 512, 0), -1);
+	}
+	close(sockfd);
+
+	//等待服务器删除文件
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+	std::ifstream check("UserFile/testB/uploadhalf.upload", std::ios::in | std::ios::binary);
+
+	EXPECT_FALSE(check.is_open());
+
+	check.close();	
+}
 
 TEST_F(ServerTest, UploadSuccess)
 {
@@ -93,7 +122,7 @@ TEST_F(ServerTest, UploadSuccess)
 
 	{
 		char buffer[1024] = "upload 5349b4ddd2781d08c09890f3 unittestfile.txt / 3";
-		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0) != -1);
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
 		memset(buffer, 0, sizeof(buffer));
        		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
 		ASSERT_TRUE(recvLen > 0);

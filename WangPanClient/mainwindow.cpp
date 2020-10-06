@@ -97,11 +97,10 @@ void MainWindow::UploadFile()
 		//	//this->uploadView.RemoveItem(temp[i]);
 		//}
 
+		UploadViewModel::Info* const info = this->uploadView.AddItem(_filename, 0, "上传中");
 		try
 		{	
-			const UploadViewModel::Info* info = this->uploadView.AddItem(_filename, 0, "上传中");
-		
-			auto func = std::bind([this](float _progress, const UploadViewModel::Info* _info)
+			auto func = std::bind([this](float _progress, UploadViewModel::Info* const _info)
 			{
 				std::string temp;
 				if(_progress < 1)
@@ -116,12 +115,13 @@ void MainWindow::UploadFile()
 		}
 		catch(std::runtime_error& _ex)
 		{
-			//**由于线程不同会引发异常
+			//**由于线程不同QT信息框会引发异常
 			//TODO
 			//该函数只创建任务
 			//立即弹出信息框提示上传是否成功
 			//后台线程再处理下载
 			QMessageBox::critical(this, tr("错误"), _ex.what());
+			this->uploadView.RemoveItem(info);
 		}
 
 		this->RefreshList();

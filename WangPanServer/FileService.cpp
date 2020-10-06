@@ -123,6 +123,9 @@ std::vector<std::string> FileService::DirFiles(const char* _path)
 
 	for(const auto& item: std::filesystem::directory_iterator(path))
 	{
+		if(item.path().extension().string() == std::string(".") + this->fileSuffix)
+			continue;
+
 		files.push_back(item.path().filename().string());
 		if(item.is_directory())
 			files.back() = "*" + files.back();

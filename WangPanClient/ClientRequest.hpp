@@ -248,7 +248,7 @@ public:
 			_progressCallback(static_cast<float>(hadRead) / fileSize);
 
 			//模拟网络速度
-			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		qSock.waitForReadyRead();
