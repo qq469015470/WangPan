@@ -83,29 +83,52 @@ void MainWindow::UploadFile()
 	if(pos != std::string::npos)
 		filename = filename.substr(pos + 1);
 
-	std::thread thread([this]()
+	std::thread thread([this](std::string _filename, std::string _path)
 	{
-		for(int i = 0; i < 20;i++)
+		//std::vector<const UploadViewModel::Info*> temp;
+		//for(int i = 0; i < 20;i++)
+		//{
+		//	temp.push_back(this->uploadView.AddItem(std::to_string(i), i));
+		//}
+		//
+		//for(size_t i = 0; i < temp.size(); i++)
+		//{
+		//	this->uploadView.SetItemProgress(temp[i], 100 - i);
+		//	//this->uploadView.RemoveItem(temp[i]);
+		//}
+
+		try
+		{	
+			const UploadViewModel::Info* info = this->uploadView.AddItem(_filename, 0, "上传中");
+		
+			auto func = std::bind([this](float _progress, const UploadViewModel::Info* _info)
+			{
+				std::string temp;
+				if(_progress < 1)
+					temp = "上传中";
+				else
+					temp = "上传完毕";
+
+				this->uploadView.SetItem(_info, _progress * 100, temp);
+			}, std::placeholders::_1, info);
+
+			this->request.UploadFile(this->token, _path, this->fileView.GetLocation().c_str(), func);
+		}
+		catch(std::runtime_error& _ex)
 		{
-			this->uploadView.AddItem(std::to_string(i), i);
-		}	
-	});
+			//**由于线程不同会引发异常
+			//TODO
+			//该函数只创建任务
+			//立即弹出信息框提示上传是否成功
+			//后台线程再处理下载
+			QMessageBox::critical(this, tr("错误"), _ex.what());
+		}
 
-	thread.detach();
+		this->RefreshList();
+	}, filename, path);
 
-	return;	
-	
-	try
-	{	
-		this->request.UploadFile(this->token, path, this->fileView.GetLocation().c_str());
-	}
-	catch(std::runtime_error& _ex)
-	{
-		QMessageBox::critical(this, tr("错误"), _ex.what());
-	}
-
-	this->RefreshList();
-	QMessageBox::information(this, tr("信息"), tr("上传完毕"));
+	thread.detach();	
+	//QMessageBox::information(this, tr("信息"), tr("上传完毕"));
 }
 
 void MainWindow::CreateDirectory()

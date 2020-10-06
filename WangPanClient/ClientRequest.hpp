@@ -5,6 +5,7 @@
 
 #include <string>
 #include <fstream>
+#include <thread>
 
 class ClientRequest
 {
@@ -182,7 +183,7 @@ public:
 			throw std::runtime_error(temp);
 	}
 
-	inline void UploadFile(const std::string& _token, const std::string& _filename, const char* _remoteDir)
+	inline void UploadFile(const std::string& _token, const std::string& _filename, const char* _remoteDir, std::function<void(float)> _progressCallback)
 	{
 		std::string::size_type pos(_filename.find_last_of('/'));
 		if(pos != std::string::npos)
@@ -244,6 +245,10 @@ public:
 			hadRead += readSize; 
 			qSock.write(buffer, readSize);
 			qSock.waitForBytesWritten();
+			_progressCallback(static_cast<float>(hadRead) / fileSize);
+
+			//模拟网络速度
+			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
 		qSock.waitForReadyRead();

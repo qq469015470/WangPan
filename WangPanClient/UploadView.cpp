@@ -2,7 +2,6 @@
 
 #include <QHeaderView>
 #include <QApplication>
-#include <iostream>
 
 UploadViewModel::UploadViewModel(QObject* _parent):
 	QAbstractTableModel(_parent)	
@@ -24,17 +23,21 @@ QVariant UploadViewModel::data(const QModelIndex& _index, int _role) const
 {
 	if(_role == Qt::DisplayRole)
 	{
+		//auto iter = this->values.cbegin();
+		//for(int i = 0; i < _index.row(); i++)
+		//	iter++;
+
 		const auto& item = this->values.at(_index.row());
 		switch(_index.column())
 		{
 			case 0:
-				return QString(item.filename.c_str());
+				return QString(item->filename.c_str());
 				break;
 			case 1:
-				return QVariant(item.progress);
+				return QVariant(item->progress);
 				break;
 			case 2:
-				return QString(item.status.c_str());
+				return QString(item->status.c_str());
 				break;
 		}
 	}
@@ -42,18 +45,21 @@ QVariant UploadViewModel::data(const QModelIndex& _index, int _role) const
 	return QVariant();
 }
 
-const std::vector<UploadViewModel::Info>& UploadViewModel::getData() const
+std::vector<std::unique_ptr<UploadViewModel::Info>>& UploadViewModel::getData()
 {
 	return this->values;
 }
 
-void UploadViewModel::setData(std::vector<Info> _values)
+void UploadViewModel::setData(std::vector<std::unique_ptr<UploadViewModel::Info>>&& _values)
 {
-	this->beginInsertRows(QModelIndex(), 0, _values.size());
+	//this->beginInsertRows(QModelIndex(), 0, _values.size());
+	this->beginResetModel();
 
-	this->values = _values;
+	if(&this->values != &_values)
+		this->values = std::move(_values);
 
-	this->endInsertRows();
+	//this->endInsertRows();
+	this->endResetModel();
 }
 
 ProgressBarDelegate::ProgressBarDelegate(QObject* _parent):
@@ -119,7 +125,7 @@ UploadView::UploadView(QWidget* _parent):
 	this->list.horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 	this->list.horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
 	this->list.horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-	//this->list.setSelectionMode(QAbstractItemView::NoSelection);
+	this->list.setSelectionMode(QAbstractItemView::NoSelection);
 	this->list.setSelectionBehavior(QAbstractItemView::SelectRows);
 	//this->list.horizontalHeader()->setStretchLastSection(true);
 	//this->list.verticalHeader()->setDefaultSectionSize(100);
@@ -135,25 +141,46 @@ UploadView::UploadView(QWidget* _parent):
 	this->list.setItemDelegate(&this->delegate);
 }
 
-size_t UploadView::AddItem(std::string _filename, int _progress)
+const UploadViewModel::Info* UploadView::AddItem(std::string _filename, int _progress, std::string _status)
 {
-	auto temp = this->model.getData();
-	temp.push_back({_filename, _progress, "-"});
+	auto& temp = this->model.getData();
+	temp.push_back(std::make_unique<UploadViewModel::Info>(UploadViewModel::Info{_filename, _progress, _status}));
+	
+	UploadViewModel::Info* result(temp.back().get());
 	this->model.setData(std::move(temp));
 
-	return temp.size() - 1;
+	return result;
 }
 
-void UploadView::SetItemProgress(int _index, int _progress)
+void UploadView::SetItem(const UploadViewModel::Info* _info, int _progress, std::string _status)
 {
-	auto temp = this->model.getData();
-	temp.at(_index).progress = _progress;
-	this->model.setData(std::move(temp));
+	auto& temp = this->model.getData();
+	for(auto& item: temp)
+	{
+		if(_info == item.get())
+		{
+			item->progress = _progress;
+			item->status = _status;
+			this->model.setData(std::move(temp));
+			return;
+		}
+	}
+
+	throw std::logic_error("pointer not exists");
 }
 
-void UploadView::RemoveItem(int _index)
+void UploadView::RemoveItem(const UploadViewModel::Info* _info)
 {
-	auto temp = this->model.getData();
-	temp.erase(temp.begin() + _index);
-	this->model.setData(std::move(temp));
+	auto& temp = this->model.getData();
+	for(auto iter = temp.begin(); iter != temp.end(); iter++)
+	{
+		if(iter->get() == _info)
+		{
+			temp.erase(iter);
+			this->model.setData(std::move(temp));
+			return;
+		}
+	}
+
+	throw std::logic_error("pointer not exists");
 }
