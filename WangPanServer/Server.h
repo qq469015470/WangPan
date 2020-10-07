@@ -23,6 +23,43 @@ public:
 	virtual void ClientClose() = 0;
 };
 
+class UploadReact: virtual public IRecvReact
+{
+private:
+	std::string uploadPath;
+	std::string uploadFileName;
+	size_t offset;
+	size_t fileSize;
+
+	FileService* fileService;
+
+
+public:
+	UploadReact(FileService* _fileService);
+
+	virtual std::vector<char> GetRecvStr(const char* _message, size_t _len) override;
+	virtual void ClientClose() override;
+	void SetInit(std::string _uploadPath, size_t _fileSize);
+	bool UploadFinish();
+};
+
+class DownloadReact: virtual public IRecvReact
+{
+private:
+	FileService* fileService;
+	std::string downloadPath;
+	size_t fileSize;
+	size_t offset;
+
+public:
+	DownloadReact(FileService* _fileService);
+
+	virtual std::vector<char> GetRecvStr(const char* _message, size_t _len) override;
+	virtual void ClientClose() override;
+	void SetInit(std::string _downloadPath);
+	bool DownloadFinish();
+};
+
 class FinalReact: virtual public IRecvReact
 {
 private:
@@ -31,27 +68,26 @@ private:
 	enum class State
 	{
 		CORE,
-		UPLOAD
+		UPLOAD,
+		DOWNLOAD,
 	};
 
 	UserService* userService;
 	FileService* fileService;
 
+	UploadReact uploadReact;
+	DownloadReact downloadReact;
+
 	State curState;
-	std::string uploadPath;
-	std::string uploadFileName;
-	size_t offset;
-	size_t fileSize;
 	std::unordered_map<std::string, CommandFunc> cmdMap;
 
 	std::vector<char> LoginCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> RegisterCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> UploadCommand(const std::array<std::string, 32>& _args);
+	std::vector<char> DownloadCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> DirCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> CreateDirCommand(const std::array<std::string, 32>& _args);
 	std::vector<char> RemoveFileCommand(const std::array<std::string, 32>& _args);
-
-	void AcceptFileBuffer(const char* _buffer, size_t _len);
 
 public:
 	FinalReact(UserService* _userService, FileService* _fileService);

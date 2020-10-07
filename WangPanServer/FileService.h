@@ -28,4 +28,8 @@ public:
 	void RemoveFile(const char* _path);
 
 	std::vector<std::string> DirFiles(const char* _path);
+
+	size_t GetFileSize(const char* _path);
+
+	std::vector<char> GetFileBuffer(const char* _path, size_t _offset, size_t _size);
 };

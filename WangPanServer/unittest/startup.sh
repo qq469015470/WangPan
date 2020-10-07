@@ -14,6 +14,8 @@ mkdir -p UserFile/UnitTestDelete
 touch UserFile/qq469015470/test.txt
 touch UserFile/qq469015470/uploading.txt.upload
 touch UserFile/testDir/testdir.upload
+touch UserFile/testB/downfile.txt
+echo "downcontent" > UserFile/testB/downfile.txt
 
 mkdir -p UserFile/testDir/wenjianjia
 mkdir -p UserFile/testDir/wenjianjia/wenjianjia2

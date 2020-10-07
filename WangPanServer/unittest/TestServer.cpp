@@ -232,7 +232,7 @@ TEST_F(ServerTest, RemoveFile)
 
 	{
 		char buffer[1024] = "rmfile 5f719c3ceca2144f4b36b200 /removedir";
-		ASSERT_TRUE(send(sockfd, buffer, strlen(buffer), 0));
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
 
 		memset(buffer, 0, sizeof(buffer));
 		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
@@ -242,4 +242,48 @@ TEST_F(ServerTest, RemoveFile)
 		EXPECT_EQ(recvStr, "rmfile success");
 	}
 
+}
+
+TEST_F(ServerTest, DownloadFile)
+{
+	const int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	EXPECT_EQ(Connect(sockfd, "127.0.0.1", 12345), 0);
+	
+	{
+		char buffer[1024] = "download 5349b4ddd2781d08c09890f3 /downfile.txt";
+		ASSERT_NE(send(sockfd, buffer, strlen(buffer), 0), -1);
+
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);	
+		ASSERT_TRUE(recvLen > 0);
+
+		std::string recvStr(buffer, recvLen);
+		EXPECT_EQ(recvStr, "download ready");
+	}
+
+	{
+		char buffer[1024] = "c";
+		ASSERT_NE(send(sockfd, buffer, 1, 0), -1);
+
+		memset(buffer, 0, sizeof(buffer));
+		const int recvLen = recv(sockfd, buffer, sizeof(buffer), 0);
+		ASSERT_TRUE(recvLen > 0);
+
+		//打开文件比较是否一致
+		std::ifstream check("UserFile/testB/downfile.txt", std::ios::in| std::ios::binary);
+		ASSERT_TRUE(check.is_open());
+		check.seekg(0, std::ios::end);
+		const int fileSize = check.tellg();
+		check.seekg(0, std::ios::beg);
+		
+		ASSERT_EQ(recvLen, fileSize);
+
+		char fileBuffer[1024];
+		check.read(fileBuffer, sizeof(fileBuffer));
+
+		for(int i = 0; i < fileSize; i++)
+			ASSERT_EQ(buffer[i], fileBuffer[i]);
+
+		check.close();
+	}
 }

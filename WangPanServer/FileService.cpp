@@ -135,3 +135,37 @@ std::vector<std::string> FileService::DirFiles(const char* _path)
 
 	return files;
 }
+
+size_t FileService::GetFileSize(const char* _path)
+{
+	std::ifstream file(std::string(this->storeBasePath) + _path, std::ios::in| std::ios::binary);
+
+	if(!file.is_open())
+		throw std::logic_error("path not exists");
+
+    	file.seekg(0, std::ios::end);
+    	const size_t fileLen = file.tellg();
+
+	file.close();
+
+	return fileLen;
+}
+
+std::vector<char> FileService::GetFileBuffer(const char* _path, size_t _offset, size_t _size)
+{
+	std::ifstream file(std::string(this->storeBasePath) + _path, std::ios::in | std::ios::binary);
+
+	if(!file.is_open())
+		throw std::logic_error("path not exists");
+
+	std::vector<char> result;
+	result.resize(_size);
+
+    	file.seekg(_offset, std::ios::beg);
+
+	file.read(result.data(), result.size());
+
+	file.close();	
+
+	return result;
+}

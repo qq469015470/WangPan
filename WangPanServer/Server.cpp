@@ -22,19 +22,107 @@ std::array<std::string, 32> GetArgs(const std::string& _message)
 	return result;
 }
 
+UploadReact::UploadReact(FileService* _fileService):
+	fileService(_fileService)
+{
+}
+
+std::vector<char> UploadReact::GetRecvStr(const char* _message, size_t _len)
+{
+	std::vector<char> result;
+	this->fileService->AcceptFile((this->uploadPath + this->uploadFileName).c_str(), this->offset, _message, _len);
+	this->offset += _len;
+
+	if(this->UploadFinish())
+	{
+		std::string temp("upload success");
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+	}
+
+	return result;
+}
+
+void UploadReact::ClientClose()
+{
+	if(this->uploadPath != "")
+	{
+		this->fileService->RemoveFile((this->uploadPath + "." + FileService::fileSuffix).c_str());
+	}
+}
+
+void UploadReact::SetInit(std::string _path, size_t _fileSize)
+{
+	this->uploadPath = _path;
+	this->offset = 0;
+	this->fileSize = _fileSize;
+}
+
+bool UploadReact::UploadFinish()
+{
+	return this->offset == this->fileSize && this->uploadPath != "";
+}
+
+DownloadReact::DownloadReact(FileService* _fileService):
+	fileService(_fileService),
+	fileSize(0),
+	offset(0)
+{
+
+}
+
+std::vector<char> DownloadReact::GetRecvStr(const char* _message, size_t _len)
+{
+	std::vector<char> result{};
+
+	//客户端发送c字符表示准备好接收下次数据	
+	if(_len == 1 && _message[0] == 'c')
+	{
+		//一次发送数据的大小
+		constexpr size_t sendSize = 1024;
+
+		const size_t size = std::min(this->fileSize - this->offset, sendSize);
+
+		result = this->fileService->GetFileBuffer(this->downloadPath.c_str(), this->offset, size);
+		this->offset += size;
+	}
+	else
+	{
+		throw std::runtime_error("content not correct");
+	}
+
+	return result;
+}
+
+void DownloadReact::ClientClose()
+{
+
+}
+
+void DownloadReact::SetInit(std::string _downloadPath)
+{
+	this->downloadPath = _downloadPath;
+	this->fileSize = this->fileService->GetFileSize(this->downloadPath.c_str());
+	this->offset = 0;
+}
+
+bool DownloadReact::DownloadFinish()
+{
+	return this->offset == this->fileSize && this->downloadPath != "";
+}
+
 FinalReact::FinalReact(UserService* _userService, FileService* _fileService):
 		userService(_userService),
 		fileService(_fileService),
-		curState(State::CORE),
-		uploadPath(""),
-		uploadFileName(""),
-		offset(0),
-		fileSize(0)
+		uploadReact(_fileService),
+		downloadReact(_fileService),
+		curState(State::CORE)
 {
 	using TYPE = std::remove_pointer<decltype(this)>::type;
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("login", std::bind(&TYPE::LoginCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("register", std::bind(&TYPE::RegisterCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("upload", std::bind(&TYPE::UploadCommand, this, std::placeholders::_1)));
+	this->cmdMap.insert(std::pair<std::string, CommandFunc>("download", std::bind(&TYPE::DownloadCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("dir", std::bind(&TYPE::DirCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("createdir", std::bind(&TYPE::CreateDirCommand, this, std::placeholders::_1)));
 	this->cmdMap.insert(std::pair<std::string, CommandFunc>("rmfile", std::bind(&TYPE::RemoveFileCommand, this, std::placeholders::_1)));
@@ -72,19 +160,18 @@ std::vector<char> FinalReact::UploadCommand(const std::array<std::string, 32>& _
 	auto user = this->userService->GetUser(_args[1]);
 	if(user.has_value())
 	{
-		result.clear();
 		temp = "upload ready";
 		result.clear();
 		result.insert(result.begin(), temp.begin(), temp.end());
 
-		this->uploadPath = user->name +_args[3];
-		this->uploadFileName = _args[2];
-		this->offset = 0;
-	       	this->fileSize = std::stoll(_args[4]);
+		const std::string uploadPath = user->name +_args[3];
+		const std::string uploadFileName = _args[2];
+	       	const size_t fileSize = std::stoll(_args[4]);
 		try
 		{
-			this->fileService->ParpareFile(this->uploadFileName.c_str(), this->uploadPath.c_str(), this->fileSize);
+			this->fileService->ParpareFile(uploadFileName.c_str(), uploadPath.c_str(), fileSize);
 			this->curState = State::UPLOAD;
+			this->uploadReact.SetInit(uploadPath + uploadFileName, fileSize);
 		}
 		catch(std::logic_error& _ex)
 		{
@@ -92,6 +179,30 @@ std::vector<char> FinalReact::UploadCommand(const std::array<std::string, 32>& _
 			result.clear();
 			result.insert(result.begin(), temp.begin(), temp.end());
 		}
+	}
+
+	return result;
+}
+
+std::vector<char> FinalReact::DownloadCommand(const std::array<std::string, 32>& _args)
+{
+	std::string temp;
+	std::vector<char> result;
+
+	auto user = this->userService->GetUser(_args[1]);
+	if(user.has_value())
+	{
+		temp = "download ready";
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
+		this->curState = State::DOWNLOAD;
+		this->downloadReact.SetInit(user->name + _args[2]);
+	}
+	else
+	{
+		temp = "token failed!";
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
 	}
 
 	return result;
@@ -172,12 +283,6 @@ std::vector<char> FinalReact::RemoveFileCommand(const std::array<std::string, 32
 	return result;
 }
 
-void FinalReact::AcceptFileBuffer(const char* _buffer, size_t _len)
-{
-	this->fileService->AcceptFile((this->uploadPath + this->uploadFileName).c_str(), this->offset, _buffer, _len);
-	this->offset += _len;
-}
-
 std::vector<char> FinalReact::GetRecvStr(const char* _message, size_t _len) 
 {
 	std::string temp;
@@ -224,17 +329,21 @@ std::vector<char> FinalReact::GetRecvStr(const char* _message, size_t _len)
 		}
 		case State::UPLOAD:
 		{
-			this->AcceptFileBuffer(_message, _len);
-			
-			//传输完毕
-			if(this->offset == this->fileSize)
+			result = this->uploadReact.GetRecvStr(_message, _len);
+			if(this->uploadReact.UploadFinish())
 			{
 				this->curState = State::CORE;
-				temp = "upload success";
-				result.clear();
-				result.insert(result.begin(), temp.begin(), temp.end());
-			}
+			}	
 			break;
+		}
+		case State::DOWNLOAD:
+		{
+			result = this->downloadReact.GetRecvStr(_message, _len);
+			if(this->downloadReact.DownloadFinish())
+			{
+				this->curState = State::CORE;
+			}
+			break;	
 		}
 		default:
 		{
@@ -248,14 +357,9 @@ std::vector<char> FinalReact::GetRecvStr(const char* _message, size_t _len)
 
 void FinalReact::ClientClose()
 {
-	if(this->curState == State::UPLOAD 
-	&& this->offset != this->fileSize)
+	if(this->curState == State::UPLOAD)
 	{
-		this->fileService->RemoveFile((this->uploadPath + this->uploadFileName + "." + FileService::fileSuffix).c_str());
-		this->uploadPath = "";
-		this->uploadFileName = "";
-		this->offset = 0;
-		this->fileSize = 0;
+		this->uploadReact.ClientClose();
 	}	
 }
 
