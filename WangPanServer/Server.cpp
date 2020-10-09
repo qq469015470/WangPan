@@ -58,7 +58,7 @@ void UploadReact::SetInit(std::string _path, size_t _fileSize)
 	this->fileSize = _fileSize;
 }
 
-bool UploadReact::UploadFinish()
+bool UploadReact::UploadFinish() const
 {
 	return this->offset == this->fileSize && this->uploadPath != "";
 }
@@ -106,7 +106,12 @@ void DownloadReact::SetInit(std::string _downloadPath)
 	this->offset = 0;
 }
 
-bool DownloadReact::DownloadFinish()
+size_t DownloadReact::GetFileSize() const
+{
+	return this->fileSize;
+}
+
+bool DownloadReact::DownloadFinish() const
 {
 	return this->offset == this->fileSize && this->downloadPath != "";
 }
@@ -192,11 +197,13 @@ std::vector<char> FinalReact::DownloadCommand(const std::array<std::string, 32>&
 	auto user = this->userService->GetUser(_args[1]);
 	if(user.has_value())
 	{
-		temp = "download ready";
-		result.clear();
-		result.insert(result.begin(), temp.begin(), temp.end());
 		this->curState = State::DOWNLOAD;
 		this->downloadReact.SetInit(user->name + _args[2]);
+		//返回客户端下载准备字令并提供文件大小
+		temp = "download ready ";
+		temp += std::to_string(this->downloadReact.GetFileSize()); 
+		result.clear();
+		result.insert(result.begin(), temp.begin(), temp.end());
 	}
 	else
 	{

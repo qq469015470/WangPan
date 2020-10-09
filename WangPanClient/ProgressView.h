@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-class UploadViewModel: public QAbstractTableModel
+class ProgressViewModel: public QAbstractTableModel
 {
 public:
 	struct Info
@@ -28,7 +28,7 @@ private:
 	std::vector<std::unique_ptr<Info>> values;
 
 public:	
-	explicit UploadViewModel(QObject* _parent);
+	explicit ProgressViewModel(QObject* _parent);
 	virtual int rowCount(const QModelIndex& _parent) const override;
 	virtual int columnCount(const QModelIndex& _parent) const override;
 	virtual QVariant data(const QModelIndex& _index, int _role) const override;
@@ -45,22 +45,22 @@ public:
 	virtual void paint(QPainter* _painter, const QStyleOptionViewItem& _option, const QModelIndex& _index) const override;
 };
 
-class UploadView: public QWidget
+class ProgressView: public QWidget
 {
 	Q_OBJECT
 	
 private:
 	QGridLayout mainLayout;
 
-	UploadViewModel model;
+	ProgressViewModel model;
 	QTableView list;
 
 	ProgressBarDelegate delegate;
 
 public:
-	UploadView(QWidget* _parent);
+	ProgressView(QWidget* _parent);
 
-	UploadViewModel::Info* const AddItem(std::string _filename, int _progress, std::string _status);
-	void SetItem(const UploadViewModel::Info* _info, int _progress, std::string _status);
-	void RemoveItem(const UploadViewModel::Info* _info);
+	ProgressViewModel::Info* const AddItem(std::string _filename, int _progress, std::string _status);
+	void SetItem(const ProgressViewModel::Info* _info, int _progress, std::string _status);
+	void RemoveItem(const ProgressViewModel::Info* _info);
 };

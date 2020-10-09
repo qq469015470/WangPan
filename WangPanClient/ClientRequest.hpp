@@ -183,6 +183,7 @@ public:
 			throw std::runtime_error(temp);
 	}
 
+	//阻塞上传文件，每次上传数据都会调用回调函数
 	inline void UploadFile(const std::string& _token, const std::string& _filename, const char* _remoteDir, std::function<void(float)> _progressCallback)
 	{
 		std::string::size_type pos(_filename.find_last_of('/'));
@@ -259,6 +260,64 @@ public:
 			throw std::runtime_error("上传异常");
 		}
 
+		file.close();
+	}
+
+	//阻塞下载文件
+	//第三个参数为回调函数
+	//回调函数参数按顺序分别是(字节，字节大小, 文件总大小)
+	inline void DownloadFile(const std::string _token, const std::string& _downloadPath, const std::string& _savePath, std::function<void(char*, size_t, size_t)> _callback)
+	{
+		QTcpSocket qSock;
+
+		this->ConnectToHost(&qSock);
+
+		std::string cmd("download ");
+		cmd += _token;
+		cmd += ' ';
+		cmd += _downloadPath;
+
+		if(qSock.write(cmd.data(), cmd.size()) == -1) throw std::runtime_error("发送信息失败");
+
+		qSock.waitForBytesWritten();
+		qSock.waitForReadyRead();
+
+		char buffer[1024];
+		qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
+		if(recvLen <= 0)
+			throw std::runtime_error("接收信息失败");
+
+		std::string temp(buffer, recvLen);
+		std::string::size_type pos(temp.find("download ready"));
+		if(pos == std::string::npos)
+			throw std::runtime_error(temp);
+		else
+			pos += 14;
+
+		const size_t fileSize = std::stoll(temp.substr(pos));
+
+		std::ofstream file(_savePath, std::ios::out | std::ios::binary);
+
+		if(!file.is_open())
+			throw std::runtime_error("打开文件失败");
+
+		size_t hadRead(0);
+		while(hadRead < fileSize)
+		{
+			qSock.write("c", 1);
+			qSock.waitForBytesWritten();
+			qSock.waitForReadyRead();
+
+			recvLen = qSock.read(buffer, sizeof(buffer));
+			if(recvLen <= 0)
+				throw std::runtime_error("下载文件失败");
+
+			file.write(buffer, recvLen);
+			hadRead+= recvLen;
+
+			_callback(buffer, recvLen, fileSize);
+		}
+		
 		file.close();
 	}
 

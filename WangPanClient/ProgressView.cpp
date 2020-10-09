@@ -1,25 +1,25 @@
-#include "UploadView.h"
+#include "ProgressView.h"
 
 #include <QHeaderView>
 #include <QApplication>
 
-UploadViewModel::UploadViewModel(QObject* _parent):
+ProgressViewModel::ProgressViewModel(QObject* _parent):
 	QAbstractTableModel(_parent)	
 {
 
 }
 
-int UploadViewModel::rowCount(const QModelIndex& _parent) const
+int ProgressViewModel::rowCount(const QModelIndex& _parent) const
 {
 	return this->values.size();
 }
 
-int UploadViewModel::columnCount(const QModelIndex& _parent) const
+int ProgressViewModel::columnCount(const QModelIndex& _parent) const
 {
 	return 3;
 }
 
-QVariant UploadViewModel::data(const QModelIndex& _index, int _role) const
+QVariant ProgressViewModel::data(const QModelIndex& _index, int _role) const
 {
 	if(_role == Qt::DisplayRole)
 	{
@@ -45,12 +45,12 @@ QVariant UploadViewModel::data(const QModelIndex& _index, int _role) const
 	return QVariant();
 }
 
-std::vector<std::unique_ptr<UploadViewModel::Info>>& UploadViewModel::getData()
+std::vector<std::unique_ptr<ProgressViewModel::Info>>& ProgressViewModel::getData()
 {
 	return this->values;
 }
 
-void UploadViewModel::setData(std::vector<std::unique_ptr<UploadViewModel::Info>>&& _values)
+void ProgressViewModel::setData(std::vector<std::unique_ptr<ProgressViewModel::Info>>&& _values)
 {
 	//this->beginInsertRows(QModelIndex(), 0, _values.size());
 	this->beginResetModel();
@@ -103,7 +103,7 @@ void ProgressBarDelegate::paint(QPainter* _painter, const QStyleOptionViewItem& 
 	}
 }
 
-UploadView::UploadView(QWidget* _parent):
+ProgressView::ProgressView(QWidget* _parent):
 	QWidget(_parent),
 	mainLayout(this),
 	model(this),
@@ -141,18 +141,18 @@ UploadView::UploadView(QWidget* _parent):
 	this->list.setItemDelegate(&this->delegate);
 }
 
-UploadViewModel::Info* const UploadView::AddItem(std::string _filename, int _progress, std::string _status)
+ProgressViewModel::Info* const ProgressView::AddItem(std::string _filename, int _progress, std::string _status)
 {
 	auto& temp = this->model.getData();
-	temp.push_back(std::make_unique<UploadViewModel::Info>(UploadViewModel::Info{_filename, _progress, _status}));
+	temp.push_back(std::make_unique<ProgressViewModel::Info>(ProgressViewModel::Info{_filename, _progress, _status}));
 	
-	UploadViewModel::Info* result(temp.back().get());
+	ProgressViewModel::Info* result(temp.back().get());
 	this->model.setData(std::move(temp));
 
 	return result;
 }
 
-void UploadView::SetItem(const UploadViewModel::Info* _info, int _progress, std::string _status)
+void ProgressView::SetItem(const ProgressViewModel::Info* _info, int _progress, std::string _status)
 {
 	auto& temp = this->model.getData();
 	for(auto& item: temp)
@@ -169,7 +169,7 @@ void UploadView::SetItem(const UploadViewModel::Info* _info, int _progress, std:
 	throw std::logic_error("pointer not exists");
 }
 
-void UploadView::RemoveItem(const UploadViewModel::Info* _info)
+void ProgressView::RemoveItem(const ProgressViewModel::Info* _info)
 {
 	auto& temp = this->model.getData();
 	for(auto iter = temp.begin(); iter != temp.end(); iter++)

@@ -7,16 +7,19 @@ FileView::FileView(QWidget* _parent):
 	listWidget(this),
 	uploadBtn(tr("上传"), this),
 	createDirBtn(tr("新建文件夹"), this),
+	downloadBtn(tr("下载"), this),
 	removeBtn(tr("删除所选"), this),
 	backBtn(tr("返回上级"), this),
 	locationLabel(tr("当前路径: ") + this->location.c_str(), this),
 	fileIcon("/home/administrator/Downloads/file.ico"),
 	folderIcon("/home/administrator/Downloads/folder.ico"),
 	uploadBtnCallback([](){}),
+	downloadBtnCallback([](){}),
 	createDirBtnCallback([](){}),
 	removeBtnCallback([](){}),
 	locationCallback([](std::string _location){})
 {
+	this->downloadBtn.hide();
 	this->removeBtn.hide();
 	this->removeBtn.setStyleSheet("QPushButton{color: red;}");
 
@@ -37,6 +40,7 @@ FileView::FileView(QWidget* _parent):
 	);
 
 	this->btnLayout.addWidget(&this->uploadBtn);
+	this->btnLayout.addWidget(&this->downloadBtn);
 	this->btnLayout.addWidget(&this->createDirBtn);
 	this->btnLayout.addWidget(&this->removeBtn);
 	this->btnLayout.addStretch();
@@ -65,11 +69,18 @@ FileView::FileView(QWidget* _parent):
 	this->locationLabel.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 	this->connect(&this->uploadBtn, &QPushButton::clicked, this, [this](){this->uploadBtnCallback();});
+	this->connect(&this->downloadBtn, &QPushButton::clicked, this, [this](){this->downloadBtnCallback();});
 	this->connect(&this->createDirBtn, &QPushButton::clicked, this, [this](){this->createDirBtnCallback();});
 	this->connect(&this->removeBtn, &QPushButton::clicked, this, [this](){this->removeBtnCallback();});
 	this->connect(&this->listWidget, &QListWidget::itemDoubleClicked, this, &FileView::DoubleClickItem);
 	this->connect(&this->listWidget, &QListWidget::itemSelectionChanged, this, [this]()
 	{
+		if(this->listWidget.selectedItems().count() == 1
+		&& this->dirs.find(this->listWidget.selectedItems()[0]->text().toStdString()) == this->dirs.end())
+			this->downloadBtn.show();
+		else
+			this->downloadBtn.hide();
+
 		if(this->listWidget.selectedItems().count() > 0)
 			this->removeBtn.show();
 		else
@@ -143,6 +154,11 @@ void FileView::LocationChangeCallback(std::function<void(std::string)> _callback
 void FileView::UploadBtnClickedCallback(std::function<void()> _callback)
 {
 	this->uploadBtnCallback = _callback;
+}
+
+void FileView::DownloadBtnClickedCallback(std::function<void()> _callback)
+{
+	this->downloadBtnCallback = _callback;
 }
 
 void FileView::CreateDirBtnClickedCallback(std::function<void()> _callback)

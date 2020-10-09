@@ -40,7 +40,7 @@ public:
 	virtual std::vector<char> GetRecvStr(const char* _message, size_t _len) override;
 	virtual void ClientClose() override;
 	void SetInit(std::string _uploadPath, size_t _fileSize);
-	bool UploadFinish();
+	bool UploadFinish() const;
 };
 
 class DownloadReact: virtual public IRecvReact
@@ -57,7 +57,8 @@ public:
 	virtual std::vector<char> GetRecvStr(const char* _message, size_t _len) override;
 	virtual void ClientClose() override;
 	void SetInit(std::string _downloadPath);
-	bool DownloadFinish();
+	size_t GetFileSize() const;
+	bool DownloadFinish() const;
 };
 
 class FinalReact: virtual public IRecvReact

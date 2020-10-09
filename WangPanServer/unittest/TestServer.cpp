@@ -258,7 +258,7 @@ TEST_F(ServerTest, DownloadFile)
 		ASSERT_TRUE(recvLen > 0);
 
 		std::string recvStr(buffer, recvLen);
-		EXPECT_EQ(recvStr, "download ready");
+		EXPECT_EQ(recvStr, "download ready 12");
 	}
 
 	{

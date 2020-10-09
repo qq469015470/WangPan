@@ -13,7 +13,8 @@ MainWindow::MainWindow():
 	content(this),
 	daohang(this),
 	fileView(this),
-	uploadView(this)
+	uploadView(this),
+	downloadView(this)
 {	
 	this->setWindowTitle(tr("网盘"));
 
@@ -28,7 +29,7 @@ MainWindow::MainWindow():
 
 	this->content.addWidget(&this->fileView);
 	this->content.addWidget(&this->uploadView);
-	this->content.addWidget(&this->uploadView);
+	this->content.addWidget(&this->downloadView);
 
 	//this->gridLayout.addWidget(&this->fileView, 0, 1);
 	//this->gridLayout.addWidget(&this->listWidget, 1, 1);
@@ -40,6 +41,7 @@ MainWindow::MainWindow():
 	});
 
 	this->fileView.UploadBtnClickedCallback(std::bind(&MainWindow::UploadFile, this));
+	this->fileView.DownloadBtnClickedCallback(std::bind(&MainWindow::DownloadFile, this));
 	this->fileView.CreateDirBtnClickedCallback(std::bind(&MainWindow::CreateDirectory, this));
 	this->fileView.RemoveBtnClickedCallback([this]()
 	{
@@ -97,13 +99,13 @@ void MainWindow::UploadFile()
 		//	//this->uploadView.RemoveItem(temp[i]);
 		//}
 
-		UploadViewModel::Info* const info = this->uploadView.AddItem(_filename, 0, "上传中");
+		ProgressViewModel::Info* const info = this->uploadView.AddItem(_filename, 0, "上传中");
 		try
 		{	
-			auto func = std::bind([this](float _progress, UploadViewModel::Info* const _info)
+			auto func = std::bind([this](float _progress, ProgressViewModel::Info* const _info)
 			{
 				std::string temp;
-				if(_progress < 1)
+				if(_progress < 1.0f)
 					temp = "上传中";
 				else
 					temp = "上传完毕";
@@ -129,6 +131,55 @@ void MainWindow::UploadFile()
 
 	thread.detach();	
 	//QMessageBox::information(this, tr("信息"), tr("上传完毕"));
+}
+
+void MainWindow::DownloadFile()
+{
+	const std::string downloadName = this->fileView.GetSelectedItems()[0]->text().toStdString();
+	const std::string savePath = QFileDialog::getSaveFileName(this, tr("下载文件"), downloadName.c_str()).toStdString();
+
+	if(savePath == "")
+		return;
+
+	std::string saveName(savePath);
+	std::string::size_type pos(savePath.find_last_of('/'));
+	if(pos != std::string::npos)
+		saveName = saveName.substr(pos + 1);
+	
+	const std::string downloadPath = this->fileView.GetLocation() + downloadName;
+	
+	const ProgressViewModel::Info* const info = this->downloadView.AddItem(saveName, 0, "下载中");
+	std::thread thread([this](std::string _savePath, std::string _downloadPath, const ProgressViewModel::Info* const  _info) 
+	{
+		size_t hadRead(0);
+		std::function<void(char*, size_t, size_t)> func = 
+		(	
+			std::bind([this, &hadRead](char* _bytes, size_t _byteSize, size_t _fileSize, const ProgressViewModel::Info* const _info)
+			{
+				hadRead += _byteSize;
+				const float progress = static_cast<float>(hadRead) / _fileSize;
+
+				if(progress < 1.0f)
+					this->downloadView.SetItem(_info, progress * 100, "下载中");
+				else
+					this->downloadView.SetItem(_info, progress * 100, "完成");
+
+			}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, _info)
+		);
+
+		try
+		{
+			this->request.DownloadFile(this->token, _downloadPath, _savePath, func);
+		}
+		catch(std::runtime_error& _ex)
+		{
+			QMessageBox::critical(nullptr, tr("错误"), _ex.what());
+			this->downloadView.RemoveItem(_info);
+		}
+
+	}, savePath, downloadPath, info);
+
+	thread.detach();
 }
 
 void MainWindow::CreateDirectory()

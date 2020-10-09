@@ -46,8 +46,8 @@ if(ANDROID)
     Daohang.cpp
     FileView.h
     FileView.cpp
-    UploadView.h
-    UploadView.cpp
+    ProgressView.h
+    ProgressView.cpp
     CreateDirectoryDialog.h
     CreateDirectoryDialog.cpp
   )
@@ -62,8 +62,8 @@ else()
     DaoHang.cpp
     FileView.h
     FileView.cpp
-    UploadView.h
-    UploadView.cpp
+    ProgressView.h
+    ProgressView.cpp
     CreateDirectoryDialog.h
     CreateDirectoryDialog.cpp
   )

@@ -25,6 +25,7 @@ private:
 
 	QPushButton uploadBtn;
 	QPushButton createDirBtn;
+	QPushButton downloadBtn;
 	QPushButton removeBtn;
 
 	QPushButton backBtn;
@@ -37,6 +38,7 @@ private:
 	std::unordered_set<std::string> dirs;
 
 	std::function<void()> uploadBtnCallback;
+	std::function<void()> downloadBtnCallback;
 	std::function<void()> createDirBtnCallback;
 	std::function<void()> removeBtnCallback;
 	std::function<void(std::string)> locationCallback;
@@ -57,6 +59,7 @@ public:
 	//目录变更回调
 	void LocationChangeCallback(std::function<void(std::string)> _callback);
 	void UploadBtnClickedCallback(std::function<void()> _callback);
+	void DownloadBtnClickedCallback(std::function<void()> _callback);
 	void CreateDirBtnClickedCallback(std::function<void()> _callback);
 	void RemoveBtnClickedCallback(std::function<void()> _callback);
 };
