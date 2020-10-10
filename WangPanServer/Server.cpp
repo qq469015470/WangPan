@@ -79,7 +79,7 @@ std::vector<char> DownloadReact::GetRecvStr(const char* _message, size_t _len)
 	if(_len == 1 && _message[0] == 'c')
 	{
 		//一次发送数据的大小
-		constexpr size_t sendSize = 1024;
+		constexpr size_t sendSize = 4096;
 
 		const size_t size = std::min(this->fileSize - this->offset, sendSize);
 

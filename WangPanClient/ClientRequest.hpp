@@ -282,7 +282,7 @@ public:
 		qSock.waitForBytesWritten();
 		qSock.waitForReadyRead();
 
-		char buffer[1024];
+		char buffer[4096];
 		qint64 recvLen(qSock.read(buffer, sizeof(buffer)));
 		if(recvLen <= 0)
 			throw std::runtime_error("接收信息失败");
@@ -308,6 +308,7 @@ public:
 			qSock.waitForBytesWritten();
 			qSock.waitForReadyRead();
 
+			//注意接收大小必须要与服务器发送的大小一致
 			recvLen = qSock.read(buffer, sizeof(buffer));
 			if(recvLen <= 0)
 				throw std::runtime_error("下载文件失败");

@@ -162,7 +162,7 @@ void MainWindow::DownloadFile()
 				if(progress < 1.0f)
 					this->downloadView.SetItem(_info, progress * 100, "下载中");
 				else
-					this->downloadView.SetItem(_info, progress * 100, "完成");
+					this->downloadView.SetItem(_info, progress * 100, "下载完毕");
 
 			}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, _info)
 		);
