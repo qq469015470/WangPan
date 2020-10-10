@@ -429,6 +429,7 @@ void Server::AcceptClient()
 void Server::RecvClient(epoll_event& _ev)
 {
 	const int& clntSock = _ev.data.fd;
+
 	char buffer[4096];
 	memset(buffer, 0 , sizeof(buffer));
 
