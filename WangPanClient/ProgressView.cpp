@@ -45,6 +45,30 @@ QVariant ProgressViewModel::data(const QModelIndex& _index, int _role) const
 	return QVariant();
 }
 
+QVariant ProgressViewModel::headerData(int _section, Qt::Orientation _orientation, int _role) const
+{
+	if(_role == Qt::DisplayRole)
+	{
+		if(_orientation == Qt::Horizontal)
+		{
+			switch(_section)
+			{
+				case 0:
+					return QString(tr("文件名"));
+					break;
+				case 1:
+					return QString(tr("进度"));
+					break;
+				case 2:
+					return QString(tr("状态"));
+					break;
+			}
+		}
+	}
+
+	return QVariant();
+}
+
 std::vector<std::unique_ptr<ProgressViewModel::Info>>& ProgressViewModel::getData()
 {
 	return this->values;
@@ -121,7 +145,7 @@ ProgressView::ProgressView(QWidget* _parent):
 
 	this->list.setShowGrid(false);
 	this->list.verticalHeader()->hide();
-	this->list.horizontalHeader()->hide();
+	//this->list.horizontalHeader()->hide();
 	this->list.horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 	this->list.horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
 	this->list.horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);

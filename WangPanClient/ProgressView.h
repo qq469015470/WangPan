@@ -32,6 +32,7 @@ public:
 	virtual int rowCount(const QModelIndex& _parent) const override;
 	virtual int columnCount(const QModelIndex& _parent) const override;
 	virtual QVariant data(const QModelIndex& _index, int _role) const override;
+	virtual QVariant headerData(int _section, Qt::Orientation _orientation, int _role) const override;
 	std::vector<std::unique_ptr<Info>>& getData();
 	void setData(std::vector<std::unique_ptr<Info>>&& _values);
 };
